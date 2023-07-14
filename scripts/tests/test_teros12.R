@@ -33,7 +33,7 @@ plotTimeSeries(data = processed.df$processed_data,
                yVar = water_content_m3.m3,
                xLab = "date", 
                yLab = "water content (m3/m3)", 
-               lineOrPoint = "point", 
+               lineOrPoint = "line", 
                colorVar = ID)
 
 
