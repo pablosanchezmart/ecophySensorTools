@@ -9,8 +9,8 @@ source("scripts/functions/functions.R")
 
 ### Fetch raw data ####
 
-sf.df <- fetchEMS81(folderIn = "C:/Users/psanche2/Desktop/EMSData/",
-                          fileOut = "data_processed/sf_05_2023.csv")
+sf.df <- fetchEMS81(folderIn = "input_data_example/caxuana_sapflow/",
+                          fileOut = "data_raw/sap_flow/raw_sap_flow_2023_07_13.csv")
 tail(sf.df)
 
 

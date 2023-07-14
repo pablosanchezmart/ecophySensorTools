@@ -9,7 +9,7 @@ source("scripts/functions/functions.R")
 
 ### Fetch raw data ####
 
-raw.df <- fetchTeros12(folderIn = "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_stem_water_content",
+raw.df <- fetchTeros12(folderIn = "input_data_example/caxuana_stem_water_content",
                     fileOut = "data_raw/stem_water_content/raw_stem_water_content_2023-07-13.csv")
 
 

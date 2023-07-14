@@ -178,7 +178,7 @@ processFlorapulse <- function(rawDataFile = NULL,
 
 ### Read water content raw data ####
 
-fetchTeros12 <- function(folderIn = "data_raw/stem_water_content",
+fetchTeros12 <- function(folderIn = NULL,
                          fileOut = NULL){
   
   require(readr)
@@ -293,11 +293,11 @@ fetchTeros12 <- function(folderIn = "data_raw/stem_water_content",
 }
 
 
-processTeros12 <- function(rawDataFile = "data_raw/stem_water_content/raw_stem_water_content_2023-07-13.csv",
+processTeros12 <- function(rawDataFile = NULL,
                               rawData = NULL,
                               labelToIDFile = NULL,
                               labelToID = labelToID.data,
-                              fileOut = "data_processed/stem_water_content/"){
+                              fileOut = NULL){
   require(readr)
   require(stringr)
   require(lubridate)
@@ -336,7 +336,7 @@ processTeros12 <- function(rawDataFile = "data_raw/stem_water_content/raw_stem_w
 
 ### Read EMS sap flow raw data ####
 
-fetchEMS81 <- function(folderIn = "C:/Users/psanche2/Desktop/EMSData/",
+fetchEMS81 <- function(folderIn = NULL,
                        fileOut = NULL){
   
   require(readr)

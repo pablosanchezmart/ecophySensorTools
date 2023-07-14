@@ -9,8 +9,8 @@ source("scripts/functions/functions.R")
 
 ### Fetch raw data ####
 
-raw.df <- fetchFlorapulse(folderIn = "C:/Campbellsci/LoggerNet",
-                          fileOut = "data_raw/wp_05_2023.csv")
+raw.df <- fetchFlorapulse(folderIn = "input_data_example/caxuana_stem_water_potential",
+                          fileOut = "data_raw/stem_water_potential/test.csv")
 
 raw.df <- raw.df %>% filter(str_detect(label, "AVG"))
 
