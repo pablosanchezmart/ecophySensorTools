@@ -30,8 +30,8 @@ correctWrongTime <- function(data){
     for(row in rowsWithProblems){
       data[row, 1] <- data[row-1, 1] + 15*60
     }
-    return(data)
   }
+  return(data)
 }
 
 ### Read florapulse raw data ####
