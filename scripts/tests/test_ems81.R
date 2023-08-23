@@ -13,6 +13,7 @@ sf.df <- fetchEMS81(folderIn = "input_data_example/caxuana_sapflow/",
                           fileOut = "data_raw/sap_flow/raw_sap_flow_2023_07_13.csv")
 tail(sf.df)
 
+### Plot ####
 
 plotTimeSeries(data = sf.df,
                     xVar = timestamp,
@@ -20,6 +21,6 @@ plotTimeSeries(data = sf.df,
                     xLab = "time", 
                     yLab = "sap flow (kg/h)", 
                     lineOrPoint = "line", 
-                    colorVar = ID_species)
+                    colorVar = ID)
 
 
