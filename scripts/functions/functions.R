@@ -1,11 +1,7 @@
-#### INITIALIZATION HSM SOIL CAXUANA PROJECT ###################################
+#### FUNCTIONS SENSOR DATA PROCESSING #####################################
 
 ## Pablo Sanchez Martinez
 ## 05/2023
-
-# to do:
-# 1. plot identification in florapulse
-# 2. standardize florapulse datalogger names (use sensor name and then match with ind data)
 
 source("initialization.R")
 
@@ -34,7 +30,7 @@ correctWrongTime <- function(data){
   return(data)
 }
 
-### Read florapulse raw data ####
+### Read florapulse water potential raw data ####
 
 fetchFlorapulse <- function(folderIn = NULL,
                             fileOut = NULL){
@@ -176,7 +172,7 @@ processFlorapulse <- function(rawDataFile = NULL,
 
 ### Teros 12 ####
 
-### Read water content raw data ####
+### Read Teros 12 water cotent data ####
 
 fetchTeros12 <- function(folderIn = NULL,
                          fileOut = NULL){
@@ -333,7 +329,6 @@ processTeros12 <- function(rawDataFile = NULL,
 }
 
 ### EMS ####
-
 ### Read EMS sap flow raw data ####
 
 fetchEMS81 <- function(folderIn = NULL,
@@ -348,24 +343,60 @@ fetchEMS81 <- function(folderIn = NULL,
   readEmsXlsx <- function(file){
     ems.df <- as.data.frame(read_excel(file))
     
+    print(file)
+    
     id_species <- str_replace(names(ems.df)[2], 
                               "^\\S* ", "")
     
     id <- unlist(str_split(id_species, "_"))
     
-    clean_ems.df <- data.frame("timestamp" = ems.df[, 1], 
-                               "ID_species" = id_species,
-                               "ID" = paste0(id[1], "_", id[2]),
-                               "species" = paste0(id[3], " ", id[4]),
-                               "plot" = ifelse(id[1] == "TFE", "TFE", "Control"),
-                          "sap_flux_kg_h" = ems.df[, 2], 
-                          "increment_mm" = ems.df[, 3], 
-                          "resistance_KOhm" = ems.df[, 4],
-                          "dT_left_electrode_K" = ems.df[, 5],
-                          "dT_central_electrode_K" = ems.df[, 6],
-                          "dT_right_electrode_K" = ems.df[, 7],
-                          "operating_status" = ems.df[, 8],
-                          "supply_voltage_V" = ems.df[, 9])
+    numCol <- length(names(ems.df))
+    
+    timestamp <- ems.df[, 1]
+    species <- paste0(id[3], " ", id[4])
+    plot <- ifelse(id[1] == "TFE", "TFE", "Control")
+    id <- paste0(plot, "_", id[2])
+    
+    sapflow <- rep(NA, length(timestamp))
+    increment <- rep(NA, length(timestamp))
+    resistance <- rep(NA, length(timestamp))
+    left_electrode <- rep(NA, length(timestamp))
+    central_electrode <- rep(NA, length(timestamp))
+    right_electrode <- rep(NA, length(timestamp))
+    status <- rep(NA, length(timestamp))
+    voltage <- rep(NA, length(timestamp))
+    
+    if(numCol == 10){
+      sapflow <- ems.df[, 2]
+      increment <- ems.df[, 3]
+      resistance <- ems.df[, 4]
+      left_electrode <- ems.df[, 5]
+      central_electrode <- ems.df[, 6]
+      right_electrode <- ems.df[, 7]
+      status <- ems.df[, 8]
+      voltage <- ems.df[, 9]
+    } else{
+      if(numCol == 4){
+        sapflow <- ems.df[, 2]
+        increment <- ems.df[, 3]
+        resistance <- ems.df[, 4]
+      } else{
+        stop("Not recognized number of columns")
+      }
+    }
+    
+    clean_ems.df <- data.frame("timestamp" = timestamp, 
+                               "ID" = id,
+                               "species" = species,
+                               "plot" = plot,
+                          "sap_flux_kg_h" = sapflow, 
+                          "increment_mm" = increment, 
+                          "resistance_KOhm" = resistance,
+                          "dT_left_electrode_K" = left_electrode,
+                          "dT_central_electrode_K" = central_electrode,
+                          "dT_right_electrode_K" = right_electrode,
+                          "operating_status" = status,
+                          "supply_voltage_V" = voltage)
 
     return(clean_ems.df)
   }
@@ -390,9 +421,66 @@ fetchEMS81 <- function(folderIn = NULL,
 }
 
 
+### Meteorology ####
+### Read meteorological raw data ####
+
+fetchMet <- function(folderIn = NULL,
+                     fileOut = NULL,
+                     plot = NULL){
+  require(readr)
+  require(stringr)
+  require(dplyr)
+  require(lubridate)
+  
+  if(is.null(folderIn)){
+    stop("specify folderIn path where the input data is located")
+  }
+  
+  if(is.null(plot)){
+    stop("specify plot")
+  }
+  
+  # function to read individual files and change from wide to long format
+  readMetCsv <- function(file){
+    df <- as.data.frame(
+      read_csv(file, 
+               skip = 1,
+               na = "7999")
+    )[-c(1, 2), ]
+    
+    for(i in 2:length(df)){
+      df[, i] <- as.numeric(df[, i])
+    }
+    
+    names(df) <- tolower(names(df))
+    
+    return(df)
+  }
+  
+  # Read all files into one
+  
+  file.list <- list.files(folderIn, 
+                          pattern = ".dat", 
+                          full.names = T)
+  
+  raw_data.list <- lapply(file.list, 
+                          readMetCsv)
+  
+  raw_data.df <- do.call(rbind, raw_data.list)
+  
+  raw_data.df$timestamp <- as_datetime(raw_data.df$timestamp)
+  
+  # save
+  if(!is.null(fileOut)){
+    write_csv(raw_data.df, fileOut)
+    print(paste0("saving raw data in ", fileOut))
+  }
+  
+  return(raw_data.df)
+}
+
 
 ### Additional functions #####
-
 ### Calculate quantile for a given variable ####
 
 getQuantile <- function(x, prob = 0.05){
