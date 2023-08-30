@@ -8,7 +8,16 @@ source("scripts/functions/functions.R")
 
 ### FETCH CONTROL TOWER DATA --------------------------------------------------- ####
 
-## It is important to have ech one of the plots data in different folders.
+## It is important to have each one of the plots data in different folders. So first of all we need to determine which tower is the data coming from.
+
+### Determine whether it is control or TFE tower
+
+determineMetTower(folderIn = "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_meteo/raw_data/",
+                  folderOutA = "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_meteo/raw_data/control/",
+                  folderOutB = "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_meteo/raw_data/tfe/")
+
+# To remove original files
+# remove.files(list.files("C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_meteo/raw_data/", pattern = ".dat"))
 
 #### STEP 1: set the location of the original data to process and the files where we want the output to be stored ####
 
@@ -17,16 +26,48 @@ source("scripts/functions/functions.R")
 
 ## processed_file_out: location and name of the file where we want the processed data to be stored.
 
-raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_meteo/raw_data/control/"
-processed_file_out <- paste0("data_processed/met/processed_met_control_", Sys.Date(), ".csv")
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_meteo/raw_data/control"
+processed_file_out <- paste0("data_processed/met/met_control_2020-2023_processed", ".csv")
 
 
 #### STEP 2: apply the functions to fetch the original data and process it ####
 
-control_met.df <- fetchMet(folderIn = raw_folder_in,
-                   fileOut = processed_file_out,
-                   plot = "Control")
-head(control_met.df)
+# Here we need to separate the two types of loggers, as they have different variables: infra and lba. We merge them later.
+control_met_all_infra.df <- data.frame()
+control_met_all_lba.df <- data.frame()
+
+for(file in list.files(raw_folder_in, pattern = ".dat", full.names = T)){
+  
+  if(str_detect(file, "INFRA")){
+    control_met_infra.df <- fetchMet(file = file,
+                               # fileOut = processed_file_out,
+                               plot = "Control")
+    
+    control_met_all_infra.df <- rbind(control_met_all_infra.df, control_met_infra.df) %>%
+      arrange(timestamp)
+  } else {
+    if(str_detect(file, "LB")){
+      control_met_lba.df <- fetchMet(file = file,
+                                     # fileOut = processed_file_out,
+                                     plot = "Control")
+      
+      control_met_all_lba.df <- rbind(control_met_all_lba.df, control_met_lba.df) %>%
+        arrange(timestamp)
+    } else{
+     print("logger not specified in file name")
+    }
+
+  }
+}
+
+# Merge loggers data
+
+control_met.df <- merge(control_met_infra.df, control_met_all_lba.df, by = "timestamp", all = T, suffixes = c("_infra", "_lba"))
+names(control_met.df)
+
+# save
+
+write_csv(control_met.df, processed_file_out)
 
 
 #### STEP 3: data visualization ####
@@ -41,12 +82,14 @@ for(variable in names(control_met.df)[c(-1, -2, -3)]){
                              xLab = "time", 
                              yLab = variable, 
                              lineOrPoint = "line")
-  control.plot
+  plot(control.plot)
   
   # Save the plot
   pdf(paste0("outputs/data_plots/met/control_", variable, ".pdf"))
   plot(control.plot)
   dev.off()
+  
+  control_met.df$variable <- NULL
 }
 
 ## repeat for TFE plot

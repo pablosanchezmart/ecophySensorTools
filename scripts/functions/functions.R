@@ -422,9 +422,58 @@ fetchEMS81 <- function(folderIn = NULL,
 
 
 ### Meteorology ####
+
+### Determine which plot is the data coming from and save in folder ####
+
+determineMetTower <- function(folderIn = NULL,
+                     folderOutA = NULL,
+                     folderOutB = NULL){
+  require(readr)
+  require(stringr)
+  require(dplyr)
+  require(lubridate)
+  
+  if(is.null(folderIn)){
+    stop("specify folderIn path where the input data is located")
+  }
+  
+  if(is.null(plot)){
+    stop("specify plot")
+  }
+  
+  # List of files to classify into control or TFE
+  
+  file.list <- list.files(folderIn, 
+                          pattern = ".dat", 
+                          full.names = T)
+  
+  for(file in file.list){
+    
+    logger.data <- as.data.frame(
+      read_csv(file, 
+               # skip = 1,
+               na = "7999", col_names = F)
+    )[1, ]
+    
+    if(str_detect(logger.data[, 1], "A")){
+      file.copy(file, paste0(folderOutA, str_replace(logger.data[, 2], " ", "_"), "_", logger.data[4], ".dat"))
+      print(paste0("moving ", file, "to ", folderOutA))
+    } else{
+      if(str_detect(logger.data[, 1], "B")){
+        file.copy(file, paste0(folderOutB, str_replace(logger.data[, 2], " ", "_"), "_", logger.data[4], ".dat"))
+        print(paste0("moving ", file, "to ", folderOutB))
+      } else{
+        
+        stop("plot identity info not red. Try finding it manually")
+      } 
+    }
+  }
+}
+
+
 ### Read meteorological raw data ####
 
-fetchMet <- function(folderIn = NULL,
+fetchMet <- function(file = NULL,
                      fileOut = NULL,
                      plot = NULL){
   require(readr)
@@ -451,24 +500,29 @@ fetchMet <- function(folderIn = NULL,
     for(i in 2:length(df)){
       df[, i] <- as.numeric(df[, i])
     }
-    
+
     names(df) <- tolower(names(df))
     
     return(df)
   }
   
   # Read all files into one
+  # 
+  # file.list <- list.files(folderIn, 
+  #                         pattern = ".dat", 
+  #                         full.names = T)
   
-  file.list <- list.files(folderIn, 
-                          pattern = ".dat", 
-                          full.names = T)
+  # raw_data.list <- lapply(file.list, 
+  #                         readMetCsv)
   
-  raw_data.list <- lapply(file.list, 
-                          readMetCsv)
+  # raw_data.df <- do.call(bind_rows, raw_data.list)
   
-  raw_data.df <- do.call(rbind, raw_data.list)
+  raw_data.df <- readMetCsv(file)
   
-  raw_data.df$timestamp <- as_datetime(raw_data.df$timestamp)
+  raw_data.df <- raw_data.df %>%
+    mutate(timestamp = as_datetime(timestamp)) %>%
+    arrange(timestamp)
+
   
   # save
   if(!is.null(fileOut)){
