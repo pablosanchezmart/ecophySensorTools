@@ -15,7 +15,7 @@ source("scripts/functions/functions.R")
 
 ## processed_file_out: location and name of the file where we want the processed data to be stored.
 
-raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_stem_water_content"
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_stem_water_content/29-09-2023"
 raw_file_out <- paste0("data_raw/stem_water_content/raw_stem_water_content_", Sys.Date(), ".csv")
 processed_file_out <- paste0("data_processed/stem_water_content/processed_stem_water_content_", Sys.Date(), ".csv")
 
@@ -46,7 +46,15 @@ processed.list <- processTeros12(rawDataFile = raw_file_out,
                                fileOut = processed_file_out)
 
 # here we can see how it looks
-head(processed.list$processed_data)
+tail(processed.list$processed_data)
+
+# to avoid problems with the dates (check later)
+
+processed.list$processed_data <- processed.list$processed_data %>%
+  filter(timestamp > "2022-01-01") %>%
+  filter(timestamp < "2023-10-10")
+
+
 
 #### STEP 3: data visualization ####
 
@@ -54,7 +62,7 @@ head(processed.list$processed_data)
 
 all.plot <- plotTimeSeries(data = processed.list$processed_data,
                xVar = timestamp,
-               yVar = water_content_m3.m3,
+               yVar = calibrated_water_content_m3.m3,
                xLab = "date", 
                yLab = "water content (m3/m3)", 
                lineOrPoint = "line", 
@@ -73,7 +81,7 @@ control_data <- processed.list$processed_data %>%
 
 control.plot <- plotTimeSeries(data = control_data,
                                xVar = timestamp,
-                               yVar = water_content_m3.m3,
+                               yVar = calibrated_water_content_m3.m3,
                                xLab = "date", 
                                yLab = "water content (m3/m3)", 
                                lineOrPoint = "line", 
@@ -92,7 +100,7 @@ tfe_data <- processed.list$processed_data %>%
 
 tfe.plot <- plotTimeSeries(data = tfe_data,
                            xVar = timestamp,
-                           yVar = water_content_m3.m3,
+                           yVar = calibrated_water_content_m3.m3,
                            xLab = "date", 
                            yLab = "water content (m3/m3)", 
                            lineOrPoint = "line", 
@@ -114,7 +122,7 @@ for(ind in unique(processed.list$processed_data$ID)){
   pdf(paste0("outputs/data_plots/stem_water_content/stem_water_content_", ind, "_", str_replace(unique(ind_data$species), " ", "_"),".pdf"))
   ind.plot <- plotTimeSeries(data = ind_data,
                              xVar = timestamp,
-                             yVar = water_content_m3.m3,
+                             yVar = calibrated_water_content_m3.m3,
                              xLab = "date", 
                              yLab = "water content (m3/m3)", 
                              lineOrPoint = "line", 

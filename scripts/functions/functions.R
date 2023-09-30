@@ -5,9 +5,8 @@
 
 source("initialization.R")
 
-#### FUNCTIONS ------------------------------------------------------------------ ####
 
-### Florapulse ####
+### FLORAPULSE ----------------------------------------------------------------- ####
 
 ### Correct wrong times using the number record and previous data
 
@@ -170,7 +169,7 @@ processFlorapulse <- function(rawDataFile = NULL,
   return(rslts)
   }
 
-### Teros 12 ####
+### TEROS 12 ------------------------------------------------------------------- ####
 
 ### Read Teros 12 water cotent data ####
 
@@ -293,7 +292,9 @@ processTeros12 <- function(rawDataFile = NULL,
                               rawData = NULL,
                               labelToIDFile = NULL,
                               labelToID = labelToID.data,
-                              fileOut = NULL){
+                              fileOut = NULL,
+                              offset = -0.08189,
+                              multiplier = 1.83658){
   require(readr)
   require(stringr)
   require(lubridate)
@@ -314,7 +315,8 @@ processTeros12 <- function(rawDataFile = NULL,
   processedData <- merge(rawData, labelToID, 
                            by = "label", 
                            all.x = T) %>%
-    mutate(date = as_date(as_datetime(timestamp))) %>%
+    mutate(date = as_date(as_datetime(timestamp)),
+           calibrated_water_content_m3.m3 = offset + (water_content_m3.m3 * multiplier)) %>%
     select(timestamp, date, ID, plot, species, size_class, teros12_sensor = label, everything())
   
   rslts <- list("processing_table" = labelToID,
@@ -328,7 +330,7 @@ processTeros12 <- function(rawDataFile = NULL,
   return(rslts)
 }
 
-### EMS ####
+### EMS------------------------------------------------------------------------- ####
 ### Read EMS sap flow raw data ####
 
 fetchEMS81 <- function(folderIn = NULL,
@@ -421,17 +423,20 @@ fetchEMS81 <- function(folderIn = NULL,
 }
 
 
-### Meteorology ####
+### METEOROLOGY ---------------------------------------------------------------- ####
+### Determine which plot is the data coming from and which dates is data covering, save in folder ####
 
-### Determine which plot is the data coming from and save in folder ####
-
-determineMetTower <- function(folderIn = NULL,
+dataIdentificator <- function(folderIn = NULL,
                      folderOutA = NULL,
                      folderOutB = NULL){
   require(readr)
   require(stringr)
   require(dplyr)
   require(lubridate)
+  
+  # to save the names of the files that cannot be automatically identified
+  
+  filesNotIdentified <- c()
   
   if(is.null(folderIn)){
     stop("specify folderIn path where the input data is located")
@@ -455,19 +460,40 @@ determineMetTower <- function(folderIn = NULL,
                na = "7999", col_names = F)
     )[1, ]
     
-    if(str_detect(logger.data[, 1], "A")){
-      file.copy(file, paste0(folderOutA, str_replace(logger.data[, 2], " ", "_"), "_", logger.data[4], ".dat"))
-      print(paste0("moving ", file, "to ", folderOutA))
+    dates <- as.data.frame(
+      read_csv(file, 
+               skip = 1,
+               na = "7999")
+    )[-c(1, 2), ]
+    
+    if(isFALSE("TIMESTAMP" %in% names(dates))){
+      next(paste0(file, "does not contain data."))
+    }
+    
+    dates <- dates[c(1, length(dates[, 1])), ] %>%
+      mutate(date = as_date(TIMESTAMP)) %>%
+      pull(date)
+    
+    # raw data new name
+    filename <- paste0(paste0(dates, collapse = "_"), "_", str_replace(logger.data[, 2], " ", "_"), ".dat")
+    
+    # save raw data in plot folder
+    
+    if(str_detect(logger.data[, 2], "A") | str_detect(file, "PA")){
+      file.copy(file, paste0(folderOutA, filename))
+      print(paste0(filename, " saved"))
     } else{
-      if(str_detect(logger.data[, 1], "B")){
-        file.copy(file, paste0(folderOutB, str_replace(logger.data[, 2], " ", "_"), "_", logger.data[4], ".dat"))
-        print(paste0("moving ", file, "to ", folderOutB))
+      if(str_detect(logger.data[, 2], "PB") | str_detect(file, "PB") | str_detect(file, "TORRE B")){
+        file.copy(file, paste0(folderOutB, filename))
+        print(paste0(filename, " saved"))
       } else{
         
-        stop("plot identity info not red. Try finding it manually")
+        warning(paste0(file, "plot identity info not red. Try finding it manually"))
+        filesNotIdentified <- c(filesNotIdentified, file)
       } 
     }
   }
+  return(filesNotIdentified)
 }
 
 
@@ -481,8 +507,8 @@ fetchMet <- function(file = NULL,
   require(dplyr)
   require(lubridate)
   
-  if(is.null(folderIn)){
-    stop("specify folderIn path where the input data is located")
+  if(is.null(file)){
+    stop("specify file path where the input data is located")
   }
   
   if(is.null(plot)){
@@ -534,7 +560,37 @@ fetchMet <- function(file = NULL,
 }
 
 
-### Additional functions #####
+#### ADDITIONAL FUNCTIONS ------------------------------------------------------ #####
+###  Combine datasets ####
+
+combineData <- function(data, variablesToCombine){
+  
+  for(var in variablesToCombine){
+    var.x <- paste(var, ".x", sep = "")
+    var.y <- paste(var, ".y", sep = "")
+    
+    var.class <- class(data[, var.x])
+    
+    # choose default value from 'x' in the case that both '.x' and '.y' have values
+    data[!is.na(data[, var.x]) & !is.na(data[, var.y]), var] <- data[!is.na(data[, var.x]) & !is.na(data[, var.y]), var.x]
+    
+    # replace NA values in 'x' with values from 'y' and vice-versa
+    data[is.na(data[, var.x]), var] <- data[is.na(data[, var.x]), var.y]
+    data[is.na(data[, var.y]), var] <- data[is.na(data[, var.y]), var.x]
+    
+    # Delete ".x" and ".y" columns
+    data[, var.x] <- NULL
+    data[, var.y] <- NULL
+    
+    if(var.class %in% c("numeric", "integer", "double")){
+      data[, var] <- as.numeric(data[, var])
+    } else{
+      data[, var] <- as.character(data[, var])
+    }
+  }
+  return(data)
+}
+
 ### Calculate quantile for a given variable ####
 
 getQuantile <- function(x, prob = 0.05){
