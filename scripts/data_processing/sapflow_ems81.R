@@ -13,13 +13,18 @@ source("scripts/functions/functions.R")
 
 ## processed_file_out: location and name of the file where we want the processed data to be stored.
 
-raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_sapflow"
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_sapflow/28-09-2023/"
 processed_file_out <- paste0("data_processed/sapflow/processed_saplfow_", Sys.Date(), ".csv")
 
 #### STEP 2: apply the functions to fetch the original data and process it ####
 
+## This function also calculates the baseline using quantile regressions and then corrects by it. 
+## Baseline results are shown as baseline_sap_flow
+
 sf.df <- fetchEMS81(folderIn = raw_folder_in,
                     fileOut = processed_file_out)
+
+
 
 #### STEP 3: data visualization ####
 
@@ -90,6 +95,28 @@ for(ind in unique(sf.df$ID)){
                              yVar = sap_flux_kg_h,
                              xLab = "time", 
                              yLab = "sap flow (kg/h)", 
+                             lineOrPoint = "line", 
+                             colorVar = ID)
+  plot(ind.plot)
+  dev.off()
+}
+
+
+### Baselined sap flow individual one by one ####
+
+for(ind in unique(sf.df$ID)){
+  
+  ind_data <- sf.df %>% 
+    filter(ID == ind)
+  
+  # Save the plot
+  pdf(paste0("outputs/data_plots/sapflow/baselined_sapflow_", ind, "_", str_replace(unique(ind_data$species), " ", "_"),".pdf"),
+      height = h, width = w)
+  ind.plot <- plotTimeSeries(data = ind_data,
+                             xVar = timestamp,
+                             yVar = bl_sap_flux_Kg_h,
+                             xLab = "time", 
+                             yLab = "corrected sap flow (kg/h)", 
                              lineOrPoint = "line", 
                              colorVar = ID)
   plot(ind.plot)

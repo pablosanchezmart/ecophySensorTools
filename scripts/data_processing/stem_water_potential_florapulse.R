@@ -15,7 +15,7 @@ source("scripts/functions/functions.R")
 
 ## processed_file_out: location and name of the file where we want the processed data to be stored.
 
-raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_stem_water_potential"
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_stem_water_potential/29-09-2023"
 raw_file_out <- paste0("data_raw/stem_water_potential/raw_stem_water_potential_", Sys.Date(), ".csv")
 processed_file_out <- paste0("data_processed/stem_water_potential/processed_stem_water_potential_", Sys.Date(), ".csv")
 
@@ -32,8 +32,7 @@ raw.df <- raw.df %>%
   filter(str_detect(label, "AVG"))
 
 ## Manual changes (if needed)
-
-raw.df[str_detect(raw.df$label, "255"), "label"] <- "B310_AVG"
+# raw.df[str_detect(raw.df$label, "255"), "label"] <- "B310_AVG"
 
 # save
 write_csv(raw.df, raw_file_out)
@@ -69,8 +68,12 @@ non_allNAs <- processed.list$processed_data %>% # Check whether there is any of 
   pull(ID)
 length(unique(non_allNAs)) # We have one sensor with all NAs
 
+## Some checkings to see whether we have all sensors
+
 unique(processed.list$processed_data$ID)[which(!unique(processed.list$processed_data$ID) %in% unique(non_allNAs))]
+
 unique(offsetMultiplier$ID)[which(!unique(offsetMultiplier$ID) %in% unique(non_allNAs))]
+
 sensors <- unique(str_remove_all(raw.df$label, "_AVG"))
 length(sensors)
 sensors[which(!sensors %in% unique(offsetMultiplier$flora_pulse_sensor))]
@@ -79,7 +82,7 @@ sensors[which(!sensors %in% unique(offsetMultiplier$flora_pulse_sensor))]
 ## Observe a specific individual to check structure of data
 
 processed.list$processed_data %>% 
-  filter(ID == "Control_211")
+  filter(ID == "TFE_116")
 
 head(processed.list$processing_table)
 
@@ -90,9 +93,9 @@ head(processed.list$processing_table)
 
 all.plot <- plotTimeSeries(data = processed.list$processed_data,
                xVar = timestamp,
-               yVar = wp_MPa,
+               yVar = wp_bar,
                xLab = "time", 
-               yLab = "WP (MPa)", 
+               yLab = "WP (bar)", 
                lineOrPoint = "line", 
                colorVar = ID) #+ ylim(-20, 20)
 all.plot
@@ -110,9 +113,9 @@ control_data <- processed.list$processed_data %>%
 
 control.plot <- plotTimeSeries(data = control_data,
                     xVar = timestamp,
-                    yVar = wp_MPa,
+                    yVar = wp_bar,
                     xLab = "time", 
-                    yLab = "WP (MPa)", 
+                    yLab = "WP (bar)", 
                     lineOrPoint = "line", 
                     colorVar = ID) #+ ylim(-5, 5)
 
@@ -129,9 +132,9 @@ tfe_data <- processed.list$processed_data %>%
 
 tfe.plot <- plotTimeSeries(data = tfe_data,
                xVar = timestamp,
-               yVar = wp_MPa,
+               yVar = wp_bar,
                xLab = "time", 
-               yLab = "WP (MPa)", 
+               yLab = "WP (bar)", 
                lineOrPoint = "line", 
                colorVar = ID) #+ ylim(-5, 5)
 
@@ -151,9 +154,9 @@ for(ind in unique(processed.list$processed_data$ID)){
   pdf(paste0("outputs/data_plots/stem_water_potential/stem_water_potential_", ind, "_", str_replace(unique(ind_data$species), " ", "_"),".pdf"))
   ind.plot <- plotTimeSeries(data = ind_data,
                  xVar = timestamp,
-                 yVar = wp_MPa,
+                 yVar = wp_bar,
                  xLab = "time", 
-                 yLab = "WP (MPa)", 
+                 yLab = "WP (bar)", 
                  lineOrPoint = "line", 
                  colorVar = ID)# + ylim(-5, 5)
   plot(ind.plot)

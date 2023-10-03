@@ -150,13 +150,13 @@ processFlorapulse <- function(rawDataFile = NULL,
                            by = "flora_pulse_sensor", 
                            all.x = T) %>%
     filter(!is.na(flora_pulse_sensor)) %>%
-    mutate(wp_MPa = (flora_pulse_offset + (flora_pulse_multiplier * value))/10)
+    mutate(wp_bar = (flora_pulse_offset + (flora_pulse_multiplier * value)))
 
   
   # Select and store results
 
   processed.df <- processed_om.df %>%
-    select(timestamp, ID, plot, species, size_class, flora_pulse_sensor, wp_MPa)
+    select(timestamp, ID, plot, species, size_class, flora_pulse_sensor, wp_bar)
   
   rslts <- list("processing_table" = processed_om.df,
                 "processed_data" = processed.df)
@@ -167,7 +167,8 @@ processFlorapulse <- function(rawDataFile = NULL,
   }
 
   return(rslts)
-  }
+}
+
 
 ### TEROS 12 ------------------------------------------------------------------- ####
 
@@ -340,6 +341,7 @@ fetchEMS81 <- function(folderIn = NULL,
   require(stringr)
   require(dplyr)
   require(readxl)
+  require(quantreg)
   
   # function to read individual files and change from wide to long format
   readEmsXlsx <- function(file){
@@ -414,6 +416,33 @@ fetchEMS81 <- function(folderIn = NULL,
   
   raw_data.df <- do.call(rbind, raw_data.list)
   
+  
+  ### Baseline (Lion) ####
+  
+  # using a 0.1 quantile regression
+  
+  unique_id <- unique(raw_data.df$ID)
+  raw_data.df$bl_sap_flux_Kg_h <- NA
+  
+  # Loop through each unique id.
+  for (id in unique_id) {
+    # Step 2a: Subset the dataset for the specific id.
+    id_subset <- raw_data.df[raw_data.df$ID == id, ]
+    if(all(is.na(id_subset$sap_flux_kg_h))){
+      next()
+    }
+    
+    # Step 2b: Perform quantile regression for the specific id.
+    quant_reg <- rq(sap_flux_kg_h ~ timestamp, data = id_subset, tau = 0.1)
+    
+    # Step 2c: Predict baseline using the quantile regression.
+    baseline <- predict(quant_reg, newdata = id_subset)
+    
+    # Step 2d: Apply the shift to the sapflux values for the specific id.
+    raw_data.df$bl_sap_flux_Kg_h[raw_data.df$ID == id] <- id_subset$sap_flux_kg_h - baseline
+  }
+  
+  
   if(!is.null(fileOut)){
     write_csv(raw_data.df, fileOut)
   }
@@ -480,10 +509,108 @@ dataIdentificator <- function(folderIn = NULL,
     # save raw data in plot folder
     
     if(str_detect(logger.data[, 2], "A") | str_detect(file, "PA")){
+      
+      # Create directory if it does't exist
+      dir.create(folderOutA, showWarnings = F)
+      # Copy file into directory to separate plot A and B data
       file.copy(file, paste0(folderOutA, filename))
       print(paste0(filename, " saved"))
     } else{
       if(str_detect(logger.data[, 2], "PB") | str_detect(file, "PB") | str_detect(file, "TORRE B")){
+        # Create directory if it does't exist
+        dir.create(folderOutB, showWarnings = F)
+        # Copy file into directory to separate plot A and B data
+        
+        file.copy(file, paste0(folderOutB, filename))
+        print(paste0(filename, " saved"))
+      } else{
+        
+        warning(paste0(file, "plot identity info not red. Try finding it manually"))
+        filesNotIdentified <- c(filesNotIdentified, file)
+      } 
+    }
+  }
+  return(filesNotIdentified)
+}
+
+### For soil data. Determine which plot is the data coming, whether it is water content or potential and from and which dates is data covering, save in folder ####
+
+soilDataIdentificator <- function(folderIn = NULL,
+                              folderOutA = NULL,
+                              folderOutB = NULL){
+  require(readr)
+  require(stringr)
+  require(dplyr)
+  require(lubridate)
+  
+  # to save the names of the files that cannot be automatically identified
+  
+  filesNotIdentified <- c()
+  
+  if(is.null(folderIn)){
+    stop("specify folderIn path where the input data is located")
+  }
+  
+  if(is.null(plot)){
+    stop("specify plot")
+  }
+  
+  # List of files to classify into control or TFE
+  
+  file.list <- list.files(folderIn, 
+                          pattern = ".dat", 
+                          full.names = T)
+  
+  for(file in file.list){
+    
+    logger.data <- as.data.frame(
+      read_csv(file, 
+               # skip = 1,
+               na = "7999", col_names = F)
+    )[1, ]
+    
+    dates <- as.data.frame(
+      read_csv(file, 
+               skip = 1,
+               na = "7999")
+    )[-c(1, 2), ]
+    
+    if(isFALSE("TIMESTAMP" %in% names(dates))){
+      next(paste0(file, "does not contain data."))
+    }
+    
+    if(any(str_detect(names(dates), "VW"))){
+      label <- "vw"
+    } else{
+      if(any(str_detect(names(dates), "SWP"))){
+        label <- "swp"
+      } else{
+        warning("Not vw or swp info")
+        next()
+      }
+    }
+    dates <- dates[c(1, length(dates[, 1])), ] %>%
+      mutate(date = as_date(TIMESTAMP)) %>%
+      pull(date)
+    
+    # raw data new name
+    filename <- paste0(label, "_", paste0(dates, collapse = "_"), "_", str_replace(logger.data[, 2], " ", "_"), ".dat")
+    
+    # save raw data in plot folder
+    
+    if(str_detect(logger.data[, 2], "A") | str_detect(file, "PA")){
+      
+      # Create directory if it does't exist
+      dir.create(folderOutA, showWarnings = F)
+      # Copy file into directory to separate plot A and B data
+      file.copy(file, paste0(folderOutA, filename))
+      print(paste0(filename, " saved"))
+    } else{
+      if(str_detect(logger.data[, 2], "PB") | str_detect(file, "PB") | str_detect(file, "TORRE B")){
+        # Create directory if it does't exist
+        dir.create(folderOutB, showWarnings = F)
+        # Copy file into directory to separate plot A and B data
+        
         file.copy(file, paste0(folderOutB, filename))
         print(paste0(filename, " saved"))
       } else{
@@ -561,6 +688,37 @@ fetchMet <- function(file = NULL,
 
 
 #### ADDITIONAL FUNCTIONS ------------------------------------------------------ #####
+### Mean, mode or date ####
+
+### Mean or mode ####
+
+meanOrMode <- function (x){
+  require(lubridate)
+  
+  # all NAs?
+  if(all(is.na(x))){
+    return(NA)
+  } else{
+    
+    # Mean for numbers
+    
+    if (is.numeric(x) | is.double(x) | is.integer(x)) {
+      meanX <- mean(x, na.rm = T)
+      return(meanX)
+    } else{
+      
+      # mode for characters
+      if (is.character(x) | is.factor(x)| lubridate::is.Date(x)) {
+        tble <- as.data.frame(table(x))
+        modeX <- tble %>% dplyr::filter(.data$Freq == max(.data$Freq)) %>% 
+          dplyr::pull(.data$x) %>%
+          as.character()
+        return(modeX)
+      }
+    }
+  }
+}
+
 ###  Combine datasets ####
 
 combineData <- function(data, variablesToCombine){
