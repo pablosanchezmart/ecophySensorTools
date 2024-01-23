@@ -120,10 +120,7 @@ processFlorapulse <- function(rawDataFile = NULL,
   
   # Read multiplier and offset info
   
-  if(is.null(offsetMultiplier) && is.null(offsetMultiplierFile)){
-    stop("Specify offsetMultiplier object or offsetMultiplierFile path")
-  } 
-  if(is.null(offsetMultiplier) && !is.null(offsetMultiplierFile)){
+  if(!is.null(offsetMultiplierFile)){
     offsetMultiplier <- read_csv(offsetMultiplierFile) 
     print(paste0("reading raw data from ", offsetMultiplierFile))
   }
@@ -133,16 +130,19 @@ processFlorapulse <- function(rawDataFile = NULL,
   processed.df <- rawData %>%
     mutate("flora_pulse_sensor" = str_remove(label, "_AVG"))
 
+  
   # Check whether all sensor names in the field have a offset and multiplier
   
-  sensorsWithoutOM <- processed.df %>%
-    filter(!flora_pulse_sensor %in% offsetMultiplier$flora_pulse_sensor) %>%
-    pull(flora_pulse_sensor) %>%
-    unique()
-  
-  if(length(sensorsWithoutOM > 0)){
-    warning(paste0("Sensors without Offset multiplier: ", paste0(sensorsWithoutOM, collapse = ", ")))
-  }
+  # if(!is.null(offsetMultiplierFile) | !is.null(offsetMultiplier)){
+    # sensorsWithoutOM <- processed.df %>%
+      # filter(!flora_pulse_sensor %in% offsetMultiplier$flora_pulse_sensor) %>%
+      # pull(flora_pulse_sensor) %>%
+      # unique()
+    
+    # if(length(sensorsWithoutOM > 0)){
+      # warning(paste0("Sensors without Offset multiplier: ", paste0(sensorsWithoutOM, collapse = ", ")))
+    # }
+  # }
   
   # process data
   
@@ -150,7 +150,9 @@ processFlorapulse <- function(rawDataFile = NULL,
                            by = "flora_pulse_sensor", 
                            all.x = T) %>%
     filter(!is.na(flora_pulse_sensor)) %>%
-    mutate(wp_bar = (flora_pulse_offset + (flora_pulse_multiplier * value)))
+    mutate(wp_bar = value
+      # wp_bar = (flora_pulse_offset + (flora_pulse_multiplier * value))
+      )
 
   
   # Select and store results
@@ -727,7 +729,7 @@ combineData <- function(data, variablesToCombine){
     var.x <- paste(var, ".x", sep = "")
     var.y <- paste(var, ".y", sep = "")
     
-    var.class <- class(data[, var.x])
+    var.class <- class(data[, var.x])[1]
     
     # choose default value from 'x' in the case that both '.x' and '.y' have values
     data[!is.na(data[, var.x]) & !is.na(data[, var.y]), var] <- data[!is.na(data[, var.x]) & !is.na(data[, var.y]), var.x]

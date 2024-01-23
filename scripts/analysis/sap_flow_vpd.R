@@ -211,13 +211,14 @@ r.squaredGLMM(sapflow_plot.mmod)
 pdf("outputs/analysis/sapflow_met/all_sapflow_vs_plot.pdf", height = h, width = w)
 sapflow_plot.plot <- ggplot(data = daily_sapflow_met_2023, 
                             aes(x = plot, 
-                                y = log_bl_sap_flux_Kg_h,
+                                y = bl_sap_flux_Kg_h,
                                 color = plot)) + 
   geom_boxplot() + 
   scale_color_manual(values = c(color_control, color_tfe)) + 
-  xlab("") + ylab("ln(sap flow (kg/h) + 10)") + 
+  xlab("") + ylab("sap flow (kg/h)") + 
   theme_minimal() +
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  ylim(-1, 6)
 sapflow_plot.plot
 dev.off()
 

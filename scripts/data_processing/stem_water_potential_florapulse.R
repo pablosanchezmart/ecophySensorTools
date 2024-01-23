@@ -15,7 +15,7 @@ source("scripts/functions/functions.R")
 
 ## processed_file_out: location and name of the file where we want the processed data to be stored.
 
-raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_stem_water_potential/29-09-2023"
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_stem_water_potential/16-10-2023"
 raw_file_out <- paste0("data_raw/stem_water_potential/raw_stem_water_potential_", Sys.Date(), ".csv")
 processed_file_out <- paste0("data_processed/stem_water_potential/processed_stem_water_potential_", Sys.Date(), ".csv")
 
@@ -28,8 +28,8 @@ raw.df <- fetchFlorapulse(folderIn = raw_folder_in,
 
 ## We will select only average varaibles (mean water potential for the period of measurement)
 
-raw.df <- raw.df %>% 
-  filter(str_detect(label, "AVG"))
+# raw.df <- raw.df %>% 
+  # filter(str_detect(label, "AVG"))
 
 ## Manual changes (if needed)
 # raw.df[str_detect(raw.df$label, "255"), "label"] <- "B310_AVG"
@@ -50,7 +50,8 @@ length(unique(non_allNAs)) # no sensors with all NAs
 
 ## Load offset and multiplier values for each sensor and its corresponding tree ID from the metadata file
 
-offsetMultiplier <- readxl::read_excel("data_raw/cax_radar_metadata_caxiuana_12_05_2023.xlsx", 
+# No longer needed with SDI12
+offsetMultiplier <- readxl::read_excel("data_raw/cax_radar_metadata_caxiuana_12_05_2023.xlsx",
                                        sheet = 1) %>%
   select(ID, plot, species, size_class, flora_pulse_sensor, flora_pulse_offset, flora_pulse_multiplier) %>%
   filter(!is.na(flora_pulse_sensor))

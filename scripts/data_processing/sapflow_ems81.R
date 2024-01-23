@@ -13,7 +13,7 @@ source("scripts/functions/functions.R")
 
 ## processed_file_out: location and name of the file where we want the processed data to be stored.
 
-raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_sapflow/28-09-2023/"
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_sapflow/17-10-2023"
 processed_file_out <- paste0("data_processed/sapflow/processed_saplfow_", Sys.Date(), ".csv")
 
 #### STEP 2: apply the functions to fetch the original data and process it ####
@@ -102,28 +102,6 @@ for(ind in unique(sf.df$ID)){
 }
 
 
-### Baselined sap flow individual one by one ####
-
-for(ind in unique(sf.df$ID)){
-  
-  ind_data <- sf.df %>% 
-    filter(ID == ind)
-  
-  # Save the plot
-  pdf(paste0("outputs/data_plots/sapflow/baselined_sapflow_", ind, "_", str_replace(unique(ind_data$species), " ", "_"),".pdf"),
-      height = h, width = w)
-  ind.plot <- plotTimeSeries(data = ind_data,
-                             xVar = timestamp,
-                             yVar = bl_sap_flux_Kg_h,
-                             xLab = "time", 
-                             yLab = "corrected sap flow (kg/h)", 
-                             lineOrPoint = "line", 
-                             colorVar = ID)
-  plot(ind.plot)
-  dev.off()
-}
-
-
 ### Dendrometer all individuals ####
 
 all.plot <- plotTimeSeries(data = sf.df,
@@ -197,3 +175,25 @@ for(ind in unique(sf.df$ID)){
   plot(ind.plot)
   dev.off()
 }
+
+### Baselined sap flow individual one by one ####
+
+for(ind in unique(sf.df$ID)){
+  
+  ind_data <- sf.df %>% 
+    filter(ID == ind)
+  
+  # Save the plot
+  pdf(paste0("outputs/data_plots/sapflow/baselined_sapflow_", ind, "_", str_replace(unique(ind_data$species), " ", "_"),".pdf"),
+      height = h, width = w)
+  ind.plot <- plotTimeSeries(data = ind_data,
+                             xVar = timestamp,
+                             yVar = bl_sap_flux_Kg_h,
+                             xLab = "time", 
+                             yLab = "corrected sap flow (kg/h)", 
+                             lineOrPoint = "line", 
+                             colorVar = ID)
+  plot(ind.plot)
+  dev.off()
+}
+

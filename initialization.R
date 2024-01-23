@@ -42,6 +42,7 @@ dir.create("outputs/data_plots/soil", showWarnings = F)
 dir.create("outputs/analysis", showWarnings = F)
 dir.create("outputs/analysis/stem_water_content_met", showWarnings = F)
 dir.create("outputs/analysis/sapflow_met", showWarnings = F)
+dir.create("outputs/analysis/soil_moisture", showWarnings = F)
 
 #### PACKAGES ------------------------------------------------------------------ ####
 

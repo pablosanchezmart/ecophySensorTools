@@ -174,6 +174,22 @@ stem_wc.mmod <- lmer(formula = log(calibrated_water_content_m3.m3) ~ plot + (1|I
 summary(stem_wc.mmod)
 r.squaredGLMM(stem_wc.mmod)
 
+# Save the plot
+pdf("outputs/analysis/stem_water_content_met/all_stem_water_content_vs_plot.pdf", 
+    height = h, 
+    width = w)
+stem_wc_plot.plot <- ggplot(data = daily_stem_wc_met_2023, 
+                            aes(x = plot, 
+                                y = calibrated_water_content_m3.m3,
+                                color = plot)) + 
+  geom_boxplot() + 
+  scale_color_manual(values = c(color_control, color_tfe)) + 
+  xlab("") + ylab("water content (m³ m³)") + 
+  theme_minimal() +
+  theme(legend.position = "none")
+stem_wc_plot.plot
+dev.off()
+
 
 ### Stem wc vs. vpd ####
 
