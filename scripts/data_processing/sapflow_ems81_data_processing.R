@@ -347,10 +347,10 @@ gf_clean_sapflow_data_metadata <- merge(gf_all_clean_sapflow_data, metadata_sapf
                                      by = "ID",
                                      all.x = T)
 
-gf_clean_sapflow_data_metadata$sap_flux_kg_h_cm2 <- gf_clean_sapflow_data_metadata$cleaned_bl_sap_flux_Kg_h / 
+gf_clean_sapflow_data_metadata$sap_flux_kg_h_cm <- gf_clean_sapflow_data_metadata$cleaned_bl_sap_flux_Kg_h / 
                                                  (gf_clean_sapflow_data_metadata$perimeter_2023_cm - ((2*pi) * gf_clean_sapflow_data_metadata$phloem_depth_cm))
 
-gf_clean_sapflow_data_metadata$gf_sap_flux_kg_h_cm2 <- gf_clean_sapflow_data_metadata$gf_cleaned_bl_sap_flux_Kg_h / 
+gf_clean_sapflow_data_metadata$gf_sap_flux_kg_h_cm <- gf_clean_sapflow_data_metadata$gf_cleaned_bl_sap_flux_Kg_h / 
   (gf_clean_sapflow_data_metadata$perimeter_2023_cm - ((2*pi) * gf_clean_sapflow_data_metadata$phloem_depth_cm))
 
 gf_clean_sapflow_data_metadata <- gf_clean_sapflow_data_metadata %>%
@@ -460,7 +460,7 @@ for(ind in unique(gf_clean_sapflow_data_metadata$ID)){
   # gap filled baselined sap flow
   area_bl_ind.plot <- plotTimeSeries(data = ind_data,
                                 xVar = timestamp,
-                                yVar = gf_sap_flux_kg_h_cm2,
+                                yVar = gf_sap_flux_kg_h_cm,
                                 xLab = "", 
                                 yLab = "gf sapflow per area (kg/h cm2)", 
                                 lineOrPoint = "line", 
@@ -504,7 +504,7 @@ for(ind in unique(daily_clean_sapflow_data$ID)){
   # gap filled baselined sap flow
   area_bl_ind.plot <- plotTimeSeries(data = ind_data,
                                      xVar = date,
-                                     yVar = gf_sap_flux_kg_h_cm2,
+                                     yVar = gf_sap_flux_kg_h_cm,
                                      xLab = "", 
                                      yLab = "gf sapflow per area (kg/h cm2)", 
                                      lineOrPoint = "line", 
