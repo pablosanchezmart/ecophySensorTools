@@ -174,7 +174,7 @@ processFlorapulse <- function(rawDataFile = NULL,
 
 ### TEROS 12 ------------------------------------------------------------------- ####
 
-### Read Teros 12 water cotent data ####
+### Read Teros 12 stem water cotent data ####
 
 fetchTeros12 <- function(folderIn = NULL,
                          fileOut = NULL){
@@ -296,8 +296,8 @@ processTeros12 <- function(rawDataFile = NULL,
                               labelToIDFile = NULL,
                               labelToID = labelToID.data,
                               fileOut = NULL,
-                              offset = -0.08189,
-                              multiplier = 1.83658){
+                              offset = -0.08189, # TTCM (Martius et al. 2024)
+                              multiplier = 1.83658){ # TTCM (Martius et al. 2024)
   require(readr)
   require(stringr)
   require(lubridate)
@@ -332,6 +332,232 @@ processTeros12 <- function(rawDataFile = NULL,
   
   return(rslts)
 }
+
+
+### Read Teros 10 soil water cotent data ####
+
+fetchTeros10 <- function(folderIn = NULL,
+                         fileOut = NULL,
+                         processed_data_sheets = 1){
+  
+  require(readr)
+  require(stringr)
+  require(dplyr)
+  require(readxl)
+  
+  if(is.null(folderIn)){
+    stop("specify folderIn path where the input data is located")
+  }
+  
+  # function to read individual files and change from wide to long format
+  readWcXlsx <- function(file){
+    
+    # extract logger metadata and name (serial number) from file
+    
+    metadataLogger <- as.data.frame(t(read_excel(file, sheet = "Metadata", col_names = F))) #
+    colnames(metadataLogger) <- metadataLogger[2, ]
+    metadataLogger <- metadataLogger[3, ]
+    loggerName <- metadataLogger[, "Serial Number"]
+    
+    # identify sheets with data
+    # processed_data_sheets <- which(str_detect(excel_sheets(file), "Processed"))
+    
+    # retrieve data for each of the sheets with data
+    
+    all_sheets_wide.df <- data.frame()
+    
+    for(dataSheet in processed_data_sheets){
+      
+      # extract column names from file
+      Names <- as.data.frame(read_excel(file, sheet = dataSheet, col_names = F))[1:3, -1]
+      
+      colNames <- character()
+      
+      for(i in 1:length(Names)){
+        colName <- paste0(Names[1, i], ".", Names[3, i])
+        
+        colNames <- c(colNames, colName)
+      } 
+      
+      colNames <- str_replace_all(colNames, " ", "_")
+      colNames <- str_remove(colNames, "°")
+      colNames <- str_replace_all(colNames, "³", "3")
+      colNames <- str_replace_all(colNames, "/", "_")
+      colNames <- paste0(loggerName, "/", colNames)
+      
+      colNames <- c("timestamp", colNames)
+      
+      
+      # Wide data
+      
+      wide.df <- as.data.frame(
+        read_excel(file, 
+                   skip = 3 , col_names = colNames, sheet = dataSheet)
+      ) %>%
+        select(timestamp, contains(paste0("Port_", 1:6)))
+      
+      # # Identify ports with WC and WP and T data
+      # 
+      # wc_ports <- str_subset(colNames, "Water_Content")
+      # 
+      # wp_ports <- str_subset(colNames, "Potential")
+      # 
+      # temp_ports <- str_subset(colNames, "Temperature")
+      # 
+      # # Long data wc
+      # 
+      # wc_long.df <- data.frame("timestamp" = character(), 
+      #                       "wc_label" = character(),
+      #                       "water_content_m3.m3" = numeric())
+      # 
+      # for(port in wc_ports){
+      #   
+      #   if(port %in% names(wide.df)){  # to make sure sensor has been colecting data
+      #     ind_long.df <- data.frame(
+      #       "timestamp" = wide.df[, "timestamp"],
+      #       "wc_label" = paste0(loggerName, "/", port),
+      #       "water_content_m3.m3" = wide.df[, port]
+      #     )
+      #     
+      #     wc_long.df <- rbind(wc_long.df,
+      #                      ind_long.df)
+      #   } else{
+      #     warning(paste0("no data for sensor ", paste0(loggerName, "_", port)))
+      #   }
+      # }
+      # 
+      # # Long data wp
+      # 
+      # wp_long.df <- data.frame("timestamp" = character(), 
+      #                       "wp_label" = character(),
+      #                       "water_potential_kPa" = numeric())
+      # 
+      # for(port in wp_ports){
+      #   
+      #   if(port %in% names(wide.df)){  # to make sure sensor has been colecting data
+      #     ind_long.df <- data.frame(
+      #       "timestamp" = wide.df[, "timestamp"],
+      #       "wp_label" = paste0(loggerName, "/", port),
+      #       "water_potential_kPa" = wide.df[, port]
+      #     )
+      #     
+      #     wp_long.df <- rbind(wp_long.df,
+      #                      ind_long.df)
+      #   } else{
+      #     warning(paste0("no data for sensor ", paste0(loggerName, "_", port)))
+      #   }
+      # }
+      #   
+      #   # Long data temp
+      #   
+      #   temp_long.df <- data.frame("timestamp" = character(), 
+      #                            "temp_label" = character(),
+      #                            "soil_temperature_C" = numeric())
+      #   
+      #   for(port in temp_ports){
+      #     
+      #     if(port %in% names(wide.df)){  # to make sure sensor has been colecting data
+      #       ind_long.df <- data.frame(
+      #         "timestamp" = wide.df[, "timestamp"],
+      #         "temp_label" = paste0(loggerName, "/", port),
+      #         "soil_temperature_C" = wide.df[, port]
+      #       )
+      #       
+      #       temp_long.df <- rbind(temp_long.df,
+      #                           ind_long.df)
+      #     } else{
+      #       warning(paste0("no data for sensor ", paste0(loggerName, "_", port)))
+      #     } 
+      # }
+      # 
+      #   ## merge wc, wp and temp long data
+      #   
+      #   wc_wp_long.df <- merge(wc_long.df, 
+      #                          wp_long.df, 
+      #                          by = "timestamp", 
+      #                          all = T)
+      #   
+      #   wc_wp_temp_long.df <- merge(wc_wp_long.df, 
+      #                          temp_long.df, 
+      #                          by = "timestamp", 
+      #                          all = T) %>%
+      #     mutate(timestamp = as_datetime(timestamp))
+      
+      all_sheets_wide.df <- bind_rows(all_sheets_wide.df, wide.df)
+      
+    }
+    return(all_sheets_wide.df)
+  }
+  
+  file.list <- list.files(folderIn, 
+                          pattern = ".xlsx", 
+                          full.names = T)
+  
+  raw_data.list <- lapply(file.list, 
+                          readWcXlsx)
+  
+  raw_data.df <- do.call(bind_rows, raw_data.list)
+  
+  raw_data.df <- raw_data.df %>%
+    mutate(timestamp = as_datetime(timestamp),
+           date = as_date(timestamp)) %>%
+    select(timestamp, date, everything())
+  
+  if(!is.null(fileOut)){
+    write_csv(raw_data.df, fileOut)
+    print(paste0("saving raw data in ", fileOut))
+  }
+  
+  return(raw_data.df)
+}
+
+# 
+# processTeros10 <- function(rawDataFile = NULL,
+#                            rawData = NULL,
+#                            labelToIDFile = NULL,
+#                            labelToID = labelToID.data,
+#                            fileOut = NULL,
+#                            offset = -0.08189, # TTCM (Martius et al. 2024)
+#                            multiplier = 1.83658){ # TTCM (Martius et al. 2024)
+#   require(readr)
+#   require(stringr)
+#   require(lubridate)
+#   
+#   wc_labelToID <- labelToID %>%
+#     filter(variable %in% labelToID$variable[str_detect(labelToID$variable, "wc")]) %>%
+#     filter(!is.na(variable)) %>%
+#     select(sensor, port, wc_depth = wc_label, variable, plot)
+#   
+#   # Read raw data
+#   
+#   if(is.null(rawData) && is.null(rawDataFile)){
+#     stop("Specify rawData object or rawDataFile path")
+#   }  
+#   
+#   if(is.null(rawData) && !is.null(rawDataFile)){
+#     rawData <- read_csv(rawDataFile) 
+#     print(paste0("reading raw data from ", rawDataFile))
+#   }
+#   
+#   # process data
+#   
+#   processedData <- merge(rawData, wc_labelToID, 
+#                          by = "wc_label", 
+#                          all.x = T) 
+#   
+#   head(processedData)
+#   
+#   rslts <- list("processing_table" = labelToID,
+#                 "processed_data" = processedData)
+#   
+#   if(!is.null(fileOut)){
+#     write_csv(processedData, fileOut)
+#     print(paste0("saving processed data in ", fileOut))
+#   }
+#   
+#   return(rslts)
+# }
+
 
 ### EMS------------------------------------------------------------------------- ####
 ### Read EMS sap flow raw data ####
@@ -690,6 +916,95 @@ fetchMet <- function(file = NULL,
 
 
 #### ADDITIONAL FUNCTIONS ------------------------------------------------------ #####
+
+### gap fill time series using monthly mean for that hour ####
+
+gapFillTimeSeries <- function(data = NULL, variable = NULL){
+  
+  if(is.null(data)){
+    stop("please specify the data argument")
+  }
+  
+  if(is.null(variable)){
+    stop("please specify the variable argument")
+  }
+  
+  if(!"timestamp" %in% names(data)){
+    stop("please include a date_time column called timestamp")
+  }
+  
+  if(!"ID" %in% names(data)){
+    stop("please include a character column called ID")
+  }
+  
+  timestamp_backbone <- data.frame("timestamp" = seq(as_datetime(min(data$timestamp)), 
+                                                     as_datetime(max(data$timestamp)), 
+                                                     by = "60 min"))
+  
+  data$month <- paste0(lubridate::month(data$timestamp, label = T, abbr = T), "-", year(data$timestamp))
+  
+  gf_data <- data.frame()
+  for(id in unique(data$ID)){
+    
+    for(m in unique(data$month)){
+      
+      id_sf_data <- data %>%
+        filter(ID == id) %>%
+        filter(month == m)
+      
+      if(length(id_sf_data$timestamp) < 1){
+        next("no data for this month")
+      }
+      
+      ## generate full time series (to gap fill in some cases)
+      
+      timestamp_backbone_month <- timestamp_backbone %>%
+        mutate(month = paste0(lubridate::month(timestamp, label = T, abbr = T), "-", year(timestamp))) %>%
+        filter(month == m) %>%
+        select(-month)
+      
+      id_sf_data <- merge(timestamp_backbone_month,
+                          id_sf_data,
+                          by = "timestamp", 
+                          all.x = T) %>%
+        # mutate(ID = id) %>%
+        arrange(ID, timestamp)
+      
+      ## gap filling (mean of the time for that month and individual)
+      
+      id_sf_data$hour <- hour(id_sf_data$timestamp)
+      
+      id_sf_data$gf_variable <- id_sf_data[, variable]
+      
+      hour_mean <- aggregate(id_sf_data[, variable], 
+                             by = list("hour" = id_sf_data$hour), 
+                             FUN = mean, 
+                             na.rm = T)
+      # rename(gf_clean_calibrated_water_content_m3.m3 = x)
+      
+      names(hour_mean) <- c("hour", "gf_variable")
+      
+      id_sf_data <- merge(id_sf_data, hour_mean, 
+                          by = "hour", 
+                          all.x = T)
+      
+      id_sf_data <- combineData(data = id_sf_data, 
+                                variablesToCombine = c("gf_variable"))
+      
+      names(id_sf_data)[names(id_sf_data) == "gf_variable"] <- paste0("gf_", variable)
+      
+      gf_data <- rbind(gf_data, id_sf_data)
+    }
+  }
+  
+  gf_data <- gf_data %>%
+    arrange(ID, timestamp) %>%
+    select(-month, -hour)
+  head(gf_data)
+  return(gf_data)
+  cat("creating new gap-filled variable: ", paste0("gf_", variable))
+}
+
 ### Mean, mode or date ####
 
 ### Mean or mode ####

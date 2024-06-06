@@ -6,7 +6,6 @@
 source("initialization.R")
 source("scripts/functions/functions.R")
 
-
 #### COLLECTED 21-05-2023 ------------------------------------------------------ ####
 
 raw_folder_in_21_05_2023 <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_sapflow/2023_05_21"
@@ -199,6 +198,54 @@ tail(sf_14_12_2023.df)
 write_csv(sf_14_12_2023.df, processed_file_out_14_12_2023)
 
 
+
+#### COLLECTED 03-15-2024 ------------------------------------------------------ ####
+
+raw_folder_in_03_15_2024 <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_sapflow/2024_03_15"
+# processed_file_out <- paste0("data_processed/sapflow/processed_saplfow_", Sys.Date(), ".csv")
+processed_file_out_03_15_2024 <- paste0("data_processed/sapflow/processed_sapflow_2024_03_15.csv")
+
+
+sf.df <- fetchEMS81(folderIn = raw_folder_in_03_15_2024,
+                    fileOut = processed_file_out_03_15_2024)
+
+sf_03_15_2024.df <- sf.df %>%
+  filter(!is.na(ID)) %>%
+  mutate(date = as_date(timestamp)) %>%
+  filter(date > "2022-01-01") %>%
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+
+unique(sf_03_15_2024.df$ID)
+length(unique(sf_03_15_2024.df$ID))
+head(sf_03_15_2024.df)
+tail(sf_03_15_2024.df)
+
+write_csv(sf_03_15_2024.df, processed_file_out_03_15_2024)
+
+
+#### COLLECTED 30-05-2024 ------------------------------------------------------ ####
+
+raw_folder_in_30_05_2024 <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_sapflow/2024_05_30"
+# processed_file_out <- paste0("data_processed/sapflow/processed_saplfow_", Sys.Date(), ".csv")
+processed_file_out_30_05_2024 <- paste0("data_processed/sapflow/processed_sapflow_2024_05_30.csv")
+
+sf.df <- fetchEMS81(folderIn = raw_folder_in_30_05_2024,
+                    fileOut = processed_file_out_30_05_2024)
+
+sf_30_05_2024.df <- sf.df %>%
+  filter(!is.na(ID)) %>%
+  mutate(date = as_date(timestamp)) %>%
+  filter(date > "2022-01-01") %>%
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+
+unique(sf_30_05_2024.df$ID)
+length(unique(sf_30_05_2024.df$ID))
+head(sf_30_05_2024.df)
+tail(sf_30_05_2024.df)
+
+write_csv(sf_30_05_2024.df, processed_file_out_30_05_2024)
+
+
 #### MERGE DATA TO ENSURE WE HAVE ALL THE TIME SERIES -------------------------- ####
 
 files_path <- list.files("data_processed/sapflow", ".csv", full.names = T)
@@ -224,7 +271,7 @@ for(i in 2:length(files_path)){
 }
 
 sapflow_data <- data %>%
-  filter(!ID %in% c("Control_NA", "Control_Licania", "TFE_122.1", "TFE_111", "TFE_178", "Control_363", "Control_Protium")) %>%   # Individuals with problems that needs to be double check, removed for now
+  filter(!ID %in% c("Control_NA", "Control_Licania", "Control_Protium")) %>%   # Individuals with problems that needs to be double check, removed for now
   mutate(timestamp = as_datetime(str_split_fixed(timestamp_ID, "_", n = 3)[, 1])) %>%
   select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
@@ -233,115 +280,10 @@ unique(sapflow_data$ID)
 head(sapflow_data)
 tail(sapflow_data)
 
-#### DELETE NEGATIVE VALUES AND SAVE ------------------------------------------- ####
 
-sapflow_data$bl_sap_flux_Kg_h[sapflow_data$bl_sap_flux_Kg_h < 0] <- NA
+#### DATA CLEANING ------------------------------------------------------------- ####
 
-head(sapflow_data)
-tail(sapflow_data)
-
-write_csv(sapflow_data, "data_processed/sapflow/complete_datasets/processed_sapflow_2022_11_17-2023_12_14.csv")
-
-
-#### Clean data plotting ####
-
-sapflow_data <- read_csv("data_processed/sapflow/complete_datasets/processed_sapflow_2022_11_17-2023_12_14.csv")
-
-### Sap flow all individuals ####
-
-all.plot <- plotTimeSeries(data = sapflow_data,
-                           xVar = timestamp,
-                           yVar = sap_flux_kg_h,
-                           xLab = "time", 
-                           yLab = "sap flow (kg/h)", 
-                           lineOrPoint = "line", 
-                           colorVar = ID)
-all.plot
-# Save the plot
-# pdf("outputs/data_plots/sapflow/sapflow_all.pdf")
-# all.plot
-# dev.off()
-
-### Sap flow control individuals ####
-
-control_data <- sapflow_data %>% 
-  filter(str_detect(ID, "Control"))
-
-control.plot <- plotTimeSeries(data = control_data,
-                               xVar = timestamp,
-                               yVar = sap_flux_kg_h,
-                               xLab = "time", 
-                               yLab = "sap flow (kg/h)", 
-                               lineOrPoint = "line", 
-                               colorVar = ID)
-control.plot
-# Save the plot
-# pdf("outputs/data_plots/sapflow/sapflow_control.pdf")
-# control.plot
-# dev.off()
-
-
-### Sap flow TFE individuals ####
-
-tfe_data <- sapflow_data %>% 
-  filter(str_detect(ID, "TFE"))
-
-tfe.plot <- plotTimeSeries(data = tfe_data,
-                           xVar = timestamp,
-                           yVar = sap_flux_kg_h,
-                           xLab = "time", 
-                           yLab = "sap flow (kg/h)", 
-                           lineOrPoint = "line", 
-                           colorVar = ID)
-tfe.plot
-# Save the plot
-# pdf("outputs/data_plots/sapflow/sapflow_tfe.pdf")
-# tfe.plot
-# dev.off()
-
-
-### Sap flow individual one by one ####
-
-for(ind in unique(sapflow_data$ID)){
-  
-  ind_data <- sapflow_data %>% 
-    filter(ID == ind)
-  
-  # Save the plot
-  pdf(paste0("outputs/data_plots/sapflow/sapflow_", ind, "_", str_replace(unique(ind_data$species), " ", "_"),".pdf"))
-  ind.plot <- plotTimeSeries(data = ind_data,
-                             xVar = timestamp,
-                             yVar = sap_flux_kg_h,
-                             xLab = "time", 
-                             yLab = "sap flow (kg/h)", 
-                             lineOrPoint = "line", 
-                             colorVar = ID)
-  plot(ind.plot)
-  dev.off()
-}
-
-
-### Baselined sap flow individual one by one ####
-
-for(ind in unique(sapflow_data$ID)){
-  
-  ind_data <- sapflow_data %>% 
-    filter(ID == ind)
-  
-  # Save the plot
-  pdf(paste0("outputs/data_plots/sapflow/baselined_sapflow_", ind, "_", str_replace(unique(ind_data$species), " ", "_"),".pdf"))
-  ind.plot <- plotTimeSeries(data = ind_data,
-                             xVar = timestamp,
-                             yVar = bl_sap_flux_Kg_h,
-                             xLab = "time", 
-                             yLab = "sap flow (kg/h)", 
-                             lineOrPoint = "line", 
-                             colorVar = ID)
-  plot(ind.plot)
-  dev.off()
-}
-
-#### LAST CLEANING AND OUTLIER REMOVAL AND SAVING ------------------------------ ####
+### id with problems 
 
 id_problems <- c("Control_252")
 id_parcially_bad <- c("Control_357", "Control_359", "TFE_204", "TFE_211", "TFE_213", "TFE_266")
@@ -349,6 +291,13 @@ id_to_remove <- c(id_problems, id_parcially_bad)
 
 clean_sapflow_data <- sapflow_data %>%
   filter(!ID %in% id_to_remove)
+
+### negative values cleaning
+
+clean_sapflow_data$bl_sap_flux_Kg_h[clean_sapflow_data$bl_sap_flux_Kg_h < 0] <- NA
+
+head(clean_sapflow_data)
+tail(clean_sapflow_data)
 
 ### individual outliers 
 
@@ -375,51 +324,207 @@ for(id in unique(clean_sapflow_data$ID)){
 all_clean_sapflow_data <- all_clean_sapflow_data %>%
   arrange(ID, timestamp)
 
-### Calculate conductivity ####
 
-clean_sapflow_data$conductivity_kg_h_cm <- clean_sapflow_data$cleaned_bl_sap_flux_Kg_h / (clean_sapflow_data$increment_mm/10)
+#### GAP FILLING USING MONTHLY MEAN PER HOUR ----------------------------------- ####
 
-### Plot clean data ####
+gf_all_clean_sapflow_data <- gapFillTimeSeries(data = all_clean_sapflow_data, 
+                                                    variable = "cleaned_bl_sap_flux_Kg_h")
 
-for(ind in unique(all_clean_sapflow_data$ID)){
-  
-  ind_data <- all_clean_sapflow_data %>% 
-    filter(ID == ind)
-  
-  # Save the plot
-  pdf(paste0("outputs/data_plots/sapflow/cleaned_baselined_sapflow_", ind, "_", str_replace(unique(ind_data$species), " ", "_"),".pdf"))
-  ind.plot <- plotTimeSeries(data = ind_data,
-                             xVar = timestamp,
-                             yVar = cleaned_bl_sap_flux_Kg_h,
-                             xLab = "time", 
-                             yLab = "sap flow (kg/h)", 
-                             lineOrPoint = "line", 
-                             colorVar = ID)
-  plot(ind.plot)
-  dev.off()
-}
+gf_all_clean_sapflow_data <- gapFillTimeSeries(data = gf_all_clean_sapflow_data, 
+                                                    variable = "increment_mm")
+
+summary(gf_all_clean_sapflow_data)
 
 
-### Save clean data
+#### CALCULATE SAPFLOW PER UNIT AREA ------------------------------------------- ####
 
-write_csv(clean_sapflow_data, "data_processed/sapflow/complete_datasets/cleaned_processed_sapflow_2022_11_17-2023_12_14.csv")
+### Calculate sapflow per unit area ####
+
+metadata_sapflow <- metadata %>%
+  select(ID, perimeter_2023_cm, phloem_depth_cm)
+
+gf_clean_sapflow_data_metadata <- merge(gf_all_clean_sapflow_data, metadata_sapflow, 
+                                     by = "ID",
+                                     all.x = T)
+
+gf_clean_sapflow_data_metadata$sap_flux_kg_h_cm2 <- gf_clean_sapflow_data_metadata$cleaned_bl_sap_flux_Kg_h / 
+                                                 (gf_clean_sapflow_data_metadata$perimeter_2023_cm - ((2*pi) * gf_clean_sapflow_data_metadata$phloem_depth_cm))
+
+gf_clean_sapflow_data_metadata$gf_sap_flux_kg_h_cm2 <- gf_clean_sapflow_data_metadata$gf_cleaned_bl_sap_flux_Kg_h / 
+  (gf_clean_sapflow_data_metadata$perimeter_2023_cm - ((2*pi) * gf_clean_sapflow_data_metadata$phloem_depth_cm))
+
+gf_clean_sapflow_data_metadata <- gf_clean_sapflow_data_metadata %>%
+  arrange(ID, timestamp) %>%
+  filter(!is.na(ID))
 
 
 #### DAILY AGGREGATION --------------------------------------------------------- ####
 
-clean_sapflow_data <- read_csv("data_processed/sapflow/complete_datasets/cleaned_processed_sapflow_2022_11_17-2023_12_14.csv") %>%
+clean_sapflow_data <- gf_clean_sapflow_data_metadata %>%
   mutate(date = as_date(timestamp),
          date_id = paste0(date, "_", ID)) %>%
   select(date_id, date, everything(), -timestamp)
 
 daily_clean_sapflow_data <- aggregate(clean_sapflow_data[, -1],
-                                    by = list(clean_sapflow_data$date_id),
-                                    FUN = meanOrMode) %>%
+                                      by = list(clean_sapflow_data$date_id),
+                                      FUN = meanOrMode)
+
+sum_daily_clean_sapflow_data <- aggregate(clean_sapflow_data[, "gf_cleaned_bl_sap_flux_Kg_h"],
+                                      by = list(clean_sapflow_data$date_id),
+                                      FUN = sum, na.rm = F) %>%
+  rename(total_daily_sap_flux_kg = x)
+
+daily_clean_sapflow_data <- merge(daily_clean_sapflow_data, sum_daily_clean_sapflow_data, by = "Group.1", all = T) %>%
   rename(date_id = Group.1) %>%
   mutate(date = ymd(date)) %>%
-  select(date, plot, ID, species, everything(), -date_id)
+  select(date, plot, ID, species, everything(), -date_id) %>%
+  arrange(ID, date)
 
 head(daily_clean_sapflow_data)
 tail(daily_clean_sapflow_data)
-write_csv(daily_clean_sapflow_data, "data_processed/sapflow/complete_datasets/daily_cleaned_processed_sapflow_2022_11_17-2023_12_14.csv")
+
+
+#### SAVE FINAL DATASET -------------------------------------------------------- ####
+
+### hourly data ####
+tail(gf_clean_sapflow_data_metadata)
+
+## to project directory
+
+write_csv(gf_clean_sapflow_data_metadata, 
+          paste0("data_processed/sapflow/complete_datasets/cleaned_processed_sapflow_", 
+                 as_date(min(gf_clean_sapflow_data_metadata$timestamp)), "-", 
+                 as_date(max(gf_clean_sapflow_data_metadata$timestamp)), ".csv")
+)
+
+## to general directory
+
+write_csv(gf_clean_sapflow_data_metadata, 
+          paste0(root.dir, "data_processed/caxuana_sapflow/cleaned_processed_sapflow_", 
+                 as_date(min(gf_clean_sapflow_data_metadata$timestamp)), "-", 
+                 as_date(max(gf_clean_sapflow_data_metadata$timestamp)), ".csv")
+)
+
+
+### daily data ####
+
+## to project directory
+
+write_csv(daily_clean_sapflow_data, 
+          paste0("data_processed/sapflow/complete_datasets/daily_cleaned_processed_sapflow_",
+                 as_date(min(gf_clean_sapflow_data_metadata$timestamp)), "-", 
+                 as_date(max(gf_clean_sapflow_data_metadata$timestamp)), ".csv")
+          )
+
+## to general directory
+
+write_csv(daily_clean_sapflow_data, 
+          paste0(root.dir, "data_processed/caxuana_sapflow/daily_cleaned_processed_sapflow_", 
+                 as_date(min(gf_clean_sapflow_data_metadata$timestamp)), "-", 
+                 as_date(max(gf_clean_sapflow_data_metadata$timestamp)), ".csv")
+)
+
+
+#### HOURLY DATA PLOTTING ------------------------------------------------------ ####
+
+gf_clean_sapflow_data_metadata <- read_csv("data_processed/sapflow/complete_datasets/cleaned_processed_sapflow_2022-11-17-2024-06-01.csv")
+
+
+for(ind in unique(gf_clean_sapflow_data_metadata$ID)){
+  
+  # ind <- "Control_211"
+  
+  ind_data <- gf_clean_sapflow_data_metadata %>%
+    filter(ID == ind) %>% 
+    mutate(date = as_date(timestamp))
+    # filter(date == "2023-11-12")
+  
+  # sap flow
+  ind.plot <- plotTimeSeries(data = ind_data,
+                             xVar = timestamp,
+                             yVar = sap_flux_kg_h,
+                             xLab = "", 
+                             yLab = "sapflow (kg/h)", 
+                             lineOrPoint = "line", 
+                             colorVar = ID)
+  
+  # gap filled baselined sap flow
+  bl_ind.plot <- plotTimeSeries(data = ind_data,
+                                xVar = timestamp,
+                                yVar = gf_cleaned_bl_sap_flux_Kg_h,
+                                xLab = "", 
+                                yLab = "gf bl cl sapflow (kg/h)", 
+                                lineOrPoint = "line", 
+                                colorVar = ID)
+  
+  # gap filled baselined sap flow
+  area_bl_ind.plot <- plotTimeSeries(data = ind_data,
+                                xVar = timestamp,
+                                yVar = gf_sap_flux_kg_h_cm2,
+                                xLab = "", 
+                                yLab = "gf sapflow per area (kg/h cm2)", 
+                                lineOrPoint = "line", 
+                                colorVar = ID)
+  
+  
+  # Save the plot
+  pdf(paste0("outputs/data_plots/sapflow/hourly/sapflow_", ind, "_", str_replace(unique(ind_data$species), " ", "_"),".pdf"))
+  p <- ggarrange(ind.plot,
+            bl_ind.plot,
+            area_bl_ind.plot, ncol = 1, nrow = 3, legend = "bottom", common.legend = T)
+  plot(p)
+  dev.off()
+}
+
+
+#### DAILY DATA PLOTTING ------------------------------------------------------ ####
+
+daily_clean_sapflow_data <- read_csv("data_processed/sapflow/complete_datasets/daily_cleaned_processed_sapflow_2022-11-17-2024-06-01.csv")
+
+### Sap flow individual one by one ####
+
+for(ind in unique(daily_clean_sapflow_data$ID)){
+  
+  
+  # ind <- "Control_211"
+  
+  ind_data <- daily_clean_sapflow_data %>%
+    filter(ID == ind)
+  # filter(date == "2023-11-12")
+  
+  # gap filled baselined sap flow
+  bl_ind.plot <- plotTimeSeries(data = ind_data,
+                                xVar = date,
+                                yVar = gf_cleaned_bl_sap_flux_Kg_h,
+                                xLab = "", 
+                                yLab = "gf bl cl sapflow (kg/h)", 
+                                lineOrPoint = "line", 
+                                colorVar = ID)
+  
+  # gap filled baselined sap flow
+  area_bl_ind.plot <- plotTimeSeries(data = ind_data,
+                                     xVar = date,
+                                     yVar = gf_sap_flux_kg_h_cm2,
+                                     xLab = "", 
+                                     yLab = "gf sapflow per area (kg/h cm2)", 
+                                     lineOrPoint = "line", 
+                                     colorVar = ID)
+  
+  # gap filled baselined sap flow
+  daily_ind.plot <- plotTimeSeries(data = ind_data,
+                                     xVar = date,
+                                     yVar = total_daily_sap_flux_kg,
+                                     xLab = "", 
+                                     yLab = "daily sapflow (kg)", 
+                                     lineOrPoint = "line", 
+                                     colorVar = ID)
+  
+  # Save the plot
+  pdf(paste0("outputs/data_plots/sapflow/daily/sapflow_", ind, "_", str_replace(unique(ind_data$species), " ", "_"),".pdf"))
+  p <- ggarrange(bl_ind.plot,
+            area_bl_ind.plot,
+            daily_ind.plot, ncol = 1, legend = "bottom", common.legend = T)
+  plot(p)
+  dev.off()
+}
 
