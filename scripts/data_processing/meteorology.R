@@ -67,10 +67,6 @@ for(file in list.files(raw_folder_in, pattern = ".dat", full.names = T)){
 
 # Select meteorological variables only
 
-met_variables.names <- readxl::read_excel("C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_meteo/caxiuana_variables_abbreviation.xlsx") %>%
-  select(abbreviation_raw, abbreviation_processing, abbreviation_processed) %>%
-  na.omit()
-
 selected_control_met_all_lba.df <- control_met_all_lba.df %>%
   select(any_of(met_variables.names$abbreviation_raw))
 tail(selected_control_met_all_lba.df)
