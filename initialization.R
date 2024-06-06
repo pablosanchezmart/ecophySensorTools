@@ -26,10 +26,14 @@ dir.create("data_raw/met", showWarnings = F)
 
 dir.create("data_processed/stem_water_potential", showWarnings = F)
 dir.create("data_processed/stem_water_content", showWarnings = F)
+
 dir.create("data_processed/sapflow", showWarnings = F)
+dir.create("data_processed/sapflow/complete_datasets", showWarnings = F)
+
 dir.create("data_processed/met", showWarnings = F)
 dir.create("data_processed/soil_moisture", showWarnings = F)
 dir.create("data_processed/leaf_wp_wc", showWarnings = F)
+dir.create("data_processed/leaf_wp_wc/complete_datasets", showWarnings = F)
 
 
 dir.create("outputs/", showWarnings = F)
@@ -61,6 +65,7 @@ library(MuMIn)
 library(interactions)
 library(stringr)
 library(data.table)
+library(readxl)
 
 #### PARAMETERS ---------------------------------------------------------------- ####
 
