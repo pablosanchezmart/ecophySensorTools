@@ -277,11 +277,11 @@ summary(stem_wc_data)
 
 ### out of range values
 
-stem_wc_data$calibrated_water_content_m3.m3[stem_wc_data$calibrated_water_content_m3.m3 < 0] <- 0
-stem_wc_data$calibrated_water_content_m3.m3[stem_wc_data$calibrated_water_content_m3.m3 > 1] <- 1
+stem_wc_data$calibrated_water_content_m3.m3[stem_wc_data$calibrated_water_content_m3.m3 < 0] <- NA
+stem_wc_data$calibrated_water_content_m3.m3[stem_wc_data$calibrated_water_content_m3.m3 > 1] <- NA
 
-stem_wc_data$water_content_m3.m3[stem_wc_data$water_content_m3.m3 < 0] <- 0
-stem_wc_data$water_content_m3.m3[stem_wc_data$water_content_m3.m3 > 1] <- 1
+stem_wc_data$water_content_m3.m3[stem_wc_data$water_content_m3.m3 < 0] <- NA
+stem_wc_data$water_content_m3.m3[stem_wc_data$water_content_m3.m3 > 1] <- NA
 
 head(stem_wc_data)
 tail(stem_wc_data)
