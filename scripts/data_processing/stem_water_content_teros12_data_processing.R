@@ -178,6 +178,41 @@ processed.list <- processTeros12(rawDataFile = raw_file_out,
 head(processed.list$processed_data)
 summary(processed.list$processed_data)
 
+#### COLLECTED 2024-05-24 ------------------------------------------------------ ####
+
+# STEP 1: set the location of the original data to process and the files where we want the output to be stored
+
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_stem_water_content/24-05-2024"
+raw_file_out <- paste0("data_raw/stem_water_content/raw_stem_water_content_2024_05_34.csv")
+processed_file_out <- paste0("data_processed/stem_water_content/processed_stem_water_content_2024_05_34.csv")
+
+# STEP 2: apply the functions to fetch the original data and process it
+
+raw.df <- fetchTeros12(folderIn = raw_folder_in,
+                       fileOut = raw_file_out)
+
+# we need to translate from label to tree id, to do so we will use the following object: labelToID.data, which comes from the metadata where we have the
+# relationship between loggers and tree ID
+
+labelToID.data <- readxl::read_excel(paste0(root.dir, "data_processed/metadata_cax_radar/cax_radar_metadata_caxiuana_03_2024.xlsx"), 
+                                     sheet = 1) %>%
+  # filter(!is.na(teros12_logger)) %>%
+  mutate(label = paste0(teros12_logger, "_", teros12_port)) %>%
+  select(ID, plot, species, size_class, label)
+
+## process data
+
+processed.list <- processTeros12(rawDataFile = raw_file_out,
+                                 rawData = NULL,
+                                 labelToIDFile = NULL,
+                                 labelToID = labelToID.data,
+                                 fileOut = processed_file_out)
+
+# here we can see how it looks
+head(processed.list$processed_data)
+summary(processed.list$processed_data)
+
+
 #### MERGE DATA TO ENSURE WE HAVE ALL THE TIME SERIES -------------------------- ####
 
 files_path <- list.files("data_processed/stem_water_content", ".csv", full.names = T)
@@ -203,6 +238,7 @@ for(i in 2:length(files_path)){
 }
 
 length(unique(data$timestamp_ID))
+length(data$timestamp_ID)
 
 ## Aggreagate per id and timestamp
 
@@ -228,7 +264,18 @@ tail(stem_wc_data)
 summary(stem_wc_data)
 
 
-#### DELETE VALUES OUT OF RANGE AND SAVE --------------------------------------- ####
+#### DATA CLEANING ------------------------------------------------------------- ####
+
+### id with problems 
+
+# id_problems <- c("Control_252")
+# id_parcially_bad <- c("Control_357", "Control_359", "TFE_204", "TFE_211", "TFE_213", "TFE_266")
+# id_to_remove <- c(id_problems, id_parcially_bad)
+# 
+# stem_wc_data <- sapflow_data %>%
+#   filter(!ID %in% id_to_remove)
+
+### out of range values
 
 stem_wc_data$calibrated_water_content_m3.m3[stem_wc_data$calibrated_water_content_m3.m3 < 0] <- 0
 stem_wc_data$calibrated_water_content_m3.m3[stem_wc_data$calibrated_water_content_m3.m3 > 1] <- 1
@@ -239,128 +286,222 @@ stem_wc_data$water_content_m3.m3[stem_wc_data$water_content_m3.m3 > 1] <- 1
 head(stem_wc_data)
 tail(stem_wc_data)
 
-#### LAST CLEANING AND OUTLIER REMOVAL AND SAVING ------------------------------ ####
-
 ### individual outliers 
 
-# stem_wc_data$cleaned_bl_sap_flux_Kg_h <- stem_wc_data$bl_sap_flux_Kg_h
-# all_stem_wc_data <- data.frame()
+stem_wc_data$clean_calibrated_water_content_m3.m3 <- stem_wc_data$calibrated_water_content_m3.m3
+all_stem_wc_data <- data.frame()
 
-# for(id in unique(stem_wc_data$ID)){
-# 
-#   id_stem_wc_data <- stem_wc_data %>%
-#     filter(ID == id)
-# 
-#   mean_wc <- mean(id_stem_wc_data$calibrated_water_content_m3.m3, na.rm = T)
-#   sd_wc <- sd(id_stem_wc_data$calibrated_water_content_m3.m3, na.rm = T)
-# 
-#   upper_threshold <- mean_wc + (sd_wc * 3)
-#   lower_threshold <- mean_wc - (sd_wc * 3)
-# 
-#   id_stem_wc_data$calibrated_water_content_m3.m3[id_stem_wc_data$calibrated_water_content_m3.m3 > upper_threshold] <- NA
-#   id_stem_wc_data$calibrated_water_content_m3.m3[id_stem_wc_data$calibrated_water_content_m3.m3 < lower_threshold] <- NA
-# 
-#   all_stem_wc_data <- rbind(all_stem_wc_data, id_stem_wc_data)
-# }
-
-all_stem_wc_data <- stem_wc_data %>%
-  arrange(ID, timestamp)
-
-write_csv(all_stem_wc_data, "data_processed/stem_water_content/complete_datasets/processed_stem_water_content_17-10-2023_15-03-2024.csv")
-
-summary(all_stem_wc_data)
-head(all_stem_wc_data)
-tail(all_stem_wc_data)
-
-#### STEP 3: data visualization ####
-
-
-all_stem_wc_data <- read_csv("data_processed/stem_water_content/complete_datasets/processed_stem_water_content_17-10-2023_15-03-2024.csv")
-
-
-### All the individuals together ####
-
-# all.plot <- plotTimeSeries(data = all_stem_wc_data,
-#                xVar = timestamp,
-#                yVar = calibrated_water_content_m3.m3,
-#                xLab = "date", 
-#                yLab = "water content (m3/m3)", 
-#                lineOrPoint = "line", 
-#                colorVar = ID) #+ ylim(0, 1)
-
-all.plot <- ggplot(data = all_stem_wc_data, aes(x = timestamp, 
-                                                y = calibrated_water_content_m3.m3, 
-                                                colour = plot)) +
-  geom_point() +
-  geom_smooth(method = "gam")
-all.plot
-
-# Save the plot
-pdf("outputs/data_plots/stem_water_content/stem_water_content_scatterplot_all.pdf")
-all.plot
-dev.off()
-
-
-### Control individuals ####
-
-control_data <- all_stem_wc_data %>% 
-  filter(str_detect(ID, "Control"))
-
-control.plot <- plotTimeSeries(data = control_data,
-                               xVar = timestamp,
-                               yVar = calibrated_water_content_m3.m3,
-                               xLab = "date", 
-                               yLab = "water content (m3/m3)", 
-                               lineOrPoint = "line", 
-                               colorVar = ID) #+ ylim(0, 1)
-
-# Save the plot
-pdf("outputs/data_plots/stem_water_content/stem_water_content_control.pdf")
-control.plot
-dev.off()
-
-
-### tfe individuals ####
-
-tfe_data <- all_stem_wc_data %>% 
-  filter(str_detect(ID, "TFE"))
-
-tfe.plot <- plotTimeSeries(data = tfe_data,
-                           xVar = timestamp,
-                           yVar = calibrated_water_content_m3.m3,
-                           xLab = "date", 
-                           yLab = "water content (m3/m3)", 
-                           lineOrPoint = "line", 
-                           colorVar = ID) #+ ylim(0, 1)
-
-# Save the plot
-pdf("outputs/data_plots/stem_water_content/stem_water_content_tfe.pdf")
-tfe.plot
-dev.off()
-
-
-### Individuals one by one ####
-
-for(ind in unique(all_stem_wc_data$ID)){
+for(id in unique(stem_wc_data$ID)){
   
-  ind <- "Control_211"
+  id_stem_wc_data <- stem_wc_data %>%
+    filter(ID == id)
   
-  tail(all_stem_wc_data)
-  ind_data <- all_stem_wc_data %>% 
-    filter(ID == ind) %>%
-    filter(date == "2023-11-12")
+  mean_sapflow <- mean(id_stem_wc_data$calibrated_water_content_m3.m3, na.rm = T)
+  sd_sapflow <- sd(id_stem_wc_data$calibrated_water_content_m3.m3, na.rm = T)
   
-  # ind_data <- all_stem_wc_data %>% filter(ID == ind)
+  upper_threshold <- mean_sapflow + (sd_sapflow * 3)
+  lower_threshold <- mean_sapflow - (sd_sapflow * 3)
   
-  # Save the plot
-  pdf(paste0("outputs/data_plots/stem_water_content/stem_water_content_", ind, "_", str_replace(unique(ind_data$species), " ", "_"),".pdf"))
+  id_stem_wc_data$clean_calibrated_water_content_m3.m3[id_stem_wc_data$clean_calibrated_water_content_m3.m3 > upper_threshold] <- NA
+  id_stem_wc_data$clean_calibrated_water_content_m3.m3[id_stem_wc_data$clean_calibrated_water_content_m3.m3 < lower_threshold] <- NA
+  
+  all_stem_wc_data <- rbind(all_stem_wc_data, id_stem_wc_data)
+}
+
+all_stem_wc_data <- all_stem_wc_data %>%
+  arrange(ID, timestamp) %>%
+  filter(!is.na(ID))
+
+
+#### GAP FILLING USING MONTHLY MEAN PER HOUR ----------------------------------- ####
+
+gf_all_stem_wc_data_1 <- gapFillTimeSeries(data = all_stem_wc_data, 
+                                               variable = "clean_calibrated_water_content_m3.m3")
+
+gf_all_stem_wc_data <- gapFillTimeSeries(data = gf_all_stem_wc_data_1, 
+                                         variable = "soil_temperature_C")
+
+summary(gf_all_stem_wc_data)
+
+
+### TEMPERATURE CORRECTION ----------------------------------------------------- ####
+
+# Apply temperature correction
+mean_t <- mean(gf_all_stem_wc_data$soil_temperature_C, na.rm = T)   # mean T is a suitable reference point
+# 25.89°C
+t_effect <- -0.000974                                                           # temperature effect coefficient (from our study)
+
+gf_all_stem_wc_data <- gf_all_stem_wc_data %>%
+  mutate(temp_diff = gf_soil_temperature_C  - mean_t,                           # calculate t - difference from reference (mean)
+         tempCor_gf_clean_calibrated_water_content_m3.m3 = gf_clean_calibrated_water_content_m3.m3 - (t_effect * temp_diff)  # Temperature correction - StWC.T
+  ) %>%
+  select(-temp_diff) %>%
+  arrange(ID, timestamp) %>%
+  rename(stem_temperature_C = soil_temperature_C) %>%
+  filter(!is.na(ID))
+
+summary(gf_all_stem_wc_data)
+
+#### DAILY AGGREGATION --------------------------------------------------------- ####
+
+clean_stem_wc_data <- gf_all_stem_wc_data %>%
+  mutate(date = as_date(timestamp),
+         date_id = paste0(date, "_", ID)) %>%
+  select(date_id, date, everything(), -timestamp, -timestamp_ID)
+
+daily_clean_stem_wc_data <- aggregate(clean_stem_wc_data[, -1],
+                                      by = list(clean_stem_wc_data$date_id),
+                                      FUN = meanOrMode)
+
+
+daily_clean_stem_wc_data <- daily_clean_stem_wc_data %>%
+  rename(date_id = Group.1) %>%
+  mutate(date = as_date(ymd(date))) %>%
+  select(date, plot, ID, species, everything(), -date_id) %>%
+  arrange(ID, date) %>%
+  filter(!is.na(ID))
+
+head(daily_clean_stem_wc_data)
+tail(daily_clean_stem_wc_data)
+
+
+#### SAVE FINAL DATASET -------------------------------------------------------- ####
+
+### hourly data ####
+tail(gf_all_stem_wc_data)
+
+## to project directory
+
+write_csv(gf_all_stem_wc_data, 
+          paste0("data_processed/stem_water_content/complete_datasets/processed_stem_water_content_", 
+                 as_date(min(gf_all_stem_wc_data$timestamp)), "-", 
+                 as_date(max(gf_all_stem_wc_data$timestamp)), ".csv")
+)
+
+## to general directory
+
+write_csv(gf_all_stem_wc_data, 
+          paste0(root.dir, "data_processed/caxiuana_stem_water_content/processed_stem_water_content_", 
+                 as_date(min(gf_all_stem_wc_data$timestamp)), "-", 
+                 as_date(max(gf_all_stem_wc_data$timestamp)), ".csv")
+)
+
+
+### daily data ####
+
+## to project directory
+
+write_csv(daily_clean_stem_wc_data, 
+          paste0("data_processed/stem_water_content/complete_datasets/daily_processed_stem_water_content_",
+                 as_date(min(as_datetime(daily_clean_stem_wc_data$date))), "-", 
+                 as_date(max(as_datetime(daily_clean_stem_wc_data$date))), ".csv")
+)
+
+## to general directory
+
+write_csv(daily_clean_stem_wc_data, 
+          paste0(root.dir, "data_processed/caxiuana_stem_water_content/daily_processed_stem_water_content_", 
+                 as_date(min(as_datetime(daily_clean_stem_wc_data$date))), "-", 
+                 as_date(max(as_datetime(daily_clean_stem_wc_data$date))), ".csv")
+)
+
+
+#### SUBDAILY DATA PLOTTING ---------------------------------------------------- ####
+
+gf_all_stem_wc_data <- read_csv("data_processed/stem_water_content/complete_datasets/processed_stem_water_content_2023-05-02-2024-04-30.csv")
+
+for(ind in unique(gf_all_stem_wc_data$ID)){
+  
+  # ind <- "Control_211"
+  
+  ind_data <- gf_all_stem_wc_data %>%
+    filter(ID == ind) %>% 
+    mutate(date = as_date(timestamp))
+  # filter(date == "2023-11-12")
+  
+  # raw water content
   ind.plot <- plotTimeSeries(data = ind_data,
                              xVar = timestamp,
-                             yVar = calibrated_water_content_m3.m3,
-                             xLab = "date", 
-                             yLab = "water content (m3/m3)", 
+                             yVar = water_content_m3.m3,
+                             xLab = "", 
+                             yLab = "stem wc (m3/m3)", 
                              lineOrPoint = "line", 
-                             colorVar = ID) #+ ylim(0, 1)
-  plot(ind.plot)
+                             colorVar = ID)
+  
+  # gap filled and calibrated water content
+  gf_ind.plot <- plotTimeSeries(data = ind_data,
+                                xVar = timestamp,
+                                yVar = gf_clean_calibrated_water_content_m3.m3,
+                                xLab = "", 
+                                yLab = "gf cl stem wc (m3/m3)", 
+                                lineOrPoint = "line", 
+                                colorVar = ID)
+  
+  # temperature corrected gap filled and calibrated water content
+  tc_ind.plot <- plotTimeSeries(data = ind_data,
+                                xVar = timestamp,
+                                yVar = tempCor_gf_clean_calibrated_water_content_m3.m3,
+                                xLab = "", 
+                                yLab = "tc gf cl stem wc (m3/m3)", 
+                                lineOrPoint = "line", 
+                                colorVar = ID)
+  
+  # Save the plot
+  pdf(paste0("outputs/data_plots/stem_water_content/hourly/stem_wc_", ind, "_", str_replace(unique(ind_data$species), " ", "_"),".pdf"))
+  p <- ggarrange(ind.plot,
+                 gf_ind.plot,
+                 tc_ind.plot,
+                 ncol = 1, nrow = 3, legend = "bottom", common.legend = T)
+  plot(p)
   dev.off()
 }
+
+
+#### DAILY DATA PLOTTING ------------------------------------------------------ ####
+
+daily_gf_all_stem_wc_data <- read_csv("data_processed/stem_water_content/complete_datasets/daily_processed_stem_water_content_2023-05-02-2024-04-30.csv")
+
+for(ind in unique(daily_gf_all_stem_wc_data$ID)){
+  
+  
+  # ind <- "Control_211"
+  ind_data <- daily_gf_all_stem_wc_data %>%
+    filter(ID == ind)
+  # filter(date == "2023-11-12")
+  
+  # raw water content
+  ind.plot <- plotTimeSeries(data = ind_data,
+                             xVar = date,
+                             yVar = water_content_m3.m3,
+                             xLab = "", 
+                             yLab = "stem wc (m3/m3)", 
+                             lineOrPoint = "line", 
+                             colorVar = ID)
+  
+  # gap filled and calibrated water content
+  gf_ind.plot <- plotTimeSeries(data = ind_data,
+                                xVar = date,
+                                yVar = gf_clean_calibrated_water_content_m3.m3,
+                                xLab = "", 
+                                yLab = "gf cl stem wc (m3/m3)", 
+                                lineOrPoint = "line", 
+                                colorVar = ID)
+  
+  # temperature corrected gap filled and calibrated water content
+  tc_ind.plot <- plotTimeSeries(data = ind_data,
+                                xVar = date,
+                                yVar = tempCor_gf_clean_calibrated_water_content_m3.m3,
+                                xLab = "", 
+                                yLab = "tc gf cl stem wc (m3/m3)", 
+                                lineOrPoint = "line", 
+                                colorVar = ID)
+  
+  # Save the plot
+  pdf(paste0("outputs/data_plots/stem_water_content/daily/stem_wc_", ind, "_", str_replace(unique(ind_data$species), " ", "_"),".pdf"))
+  p <- ggarrange(ind.plot,
+                 gf_ind.plot,
+                 tc_ind.plot, ncol = 1, legend = "bottom", common.legend = T)
+  plot(p)
+  dev.off()
+}
+

@@ -253,8 +253,12 @@ fetchTeros12 <- function(folderIn = NULL,
             "timestamp" = wide.df[, "timestamp"],
             "label" = paste0(loggerName, "_", port),
             "water_content_m3.m3" = wide.df[, paste0(port, ".m3/m3_Water_Content")],
-            "soil_temperature_C" = wide.df[, paste0(port, ".C_Soil_Temperature")],
-            "bulk_EC_mS.cm" = wide.df[, paste0(port, ".mS/cm_Bulk_EC")]
+            "soil_temperature_C" = ifelse(paste0(port, ".C_Soil_Temperature") %in% names(wide.df), 
+                                          wide.df[, paste0(port, ".C_Soil_Temperature")], 
+                                          NA),  # to avoid problems with basic loggers (which don't measure temperature or bulk density)
+            "bulk_EC_mS.cm" = ifelse(paste0(port, ".mS/cm_Bulk_EC") %in% names(wide.df), 
+                                     wide.df[, paste0(port, ".mS/cm_Bulk_EC")], 
+                                     NA)  # same as with temperature
           )
           
           long.df <- rbind(long.df,
