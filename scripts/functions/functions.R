@@ -318,8 +318,12 @@ processTeros12 <- function(rawDataFile = NULL,
   }
   
   # process data
+
+  labelToID <- labelToID %>%
+    filter(label %in% unique(rawData$label))
   
-  processedData <- merge(rawData, labelToID, 
+  processedData <- merge(rawData, 
+                         labelToID, 
                            by = "label", 
                            all.x = T) %>%
     mutate(date = as_date(as_datetime(timestamp)),
@@ -923,7 +927,10 @@ fetchMet <- function(file = NULL,
 
 ### gap fill time series using monthly mean for that hour ####
 
-gapFillTimeSeries <- function(data = NULL, variable = NULL){
+gapFillTimeSeries <- function(data = NULL,
+                              variable = NULL,
+                              temporal_resolution = "60 min",
+                              method = "interpolation", id_vars = NULL){
   
   if(is.null(data)){
     stop("please specify the data argument")
@@ -941,24 +948,32 @@ gapFillTimeSeries <- function(data = NULL, variable = NULL){
     stop("please include a character column called ID")
   }
   
+  if(!method %in% c("interpolation", "monthly_mean")){
+    stop("please include interpolation or monthly_mean as a mehtod")
+  }
+  
   timestamp_backbone <- data.frame("timestamp" = seq(as_datetime(min(data$timestamp)), 
                                                      as_datetime(max(data$timestamp)), 
-                                                     by = "60 min"))
+                                                     by = temporal_resolution))
   
   data$month <- paste0(lubridate::month(data$timestamp, label = T, abbr = T), "-", year(data$timestamp))
   
   gf_data <- data.frame()
   for(id in unique(data$ID)){
     
-    for(m in unique(data$month)){
+    ## monthly mean method
+    if(method == "monthly_mean"){
       
-      id_sf_data <- data %>%
-        filter(ID == id) %>%
-        filter(month == m)
+    for(m in unique(data$month)){
       
       if(length(id_sf_data$timestamp) < 1){
         next("no data for this month")
       }
+      
+      # id data
+      id_sf_data <- data %>%
+        filter(ID == id) %>%
+        filter(month == m)
       
       ## generate full time series (to gap fill in some cases)
       
@@ -971,7 +986,7 @@ gapFillTimeSeries <- function(data = NULL, variable = NULL){
                           id_sf_data,
                           by = "timestamp", 
                           all.x = T) %>%
-        # mutate(ID = id) %>%
+        mutate(ID = id) %>%
         arrange(ID, timestamp)
       
       ## gap filling (mean of the time for that month and individual)
@@ -997,17 +1012,52 @@ gapFillTimeSeries <- function(data = NULL, variable = NULL){
       
       names(id_sf_data)[names(id_sf_data) == "gf_variable"] <- paste0("gf_", variable)
       
+      # add id variables (e.g., plot)
+      for(id_var in id_vars){
+        id_sf_data[, id_var] <- na.omit(unique(id_sf_data[, id_var]))
+      }
+      
       gf_data <- rbind(gf_data, id_sf_data)
     }
+    
+    }
+    
+    ## interpolation method
+    if(method == "interpolation"){
+      
+      # id data
+      id_sf_data <- data %>%
+        filter(ID == id)
+      
+      id_sf_data <- merge(timestamp_backbone,
+                          id_sf_data,
+                          by = "timestamp", 
+                          all.x = T) %>%
+        mutate(ID = id,
+               hour = hour(timestamp)) %>%
+        arrange(ID, timestamp)
+      
+      # Impute remaining missing values using linear interpolation
+      id_sf_data[, paste0("gf_", variable)] <- na_interpolation(id_sf_data[, variable])
+      
+      # add id variables (e.g., plot)
+      for(id_var in id_vars){
+        id_sf_data[, id_var] <- na.omit(unique(id_sf_data[, id_var]))
+      }
+      gf_data <- rbind(gf_data, id_sf_data)
+    }
+    
   }
   
   gf_data <- gf_data %>%
     arrange(ID, timestamp) %>%
     select(-month, -hour)
-  head(gf_data)
+  # summary(gf_data)
   return(gf_data)
   cat("creating new gap-filled variable: ", paste0("gf_", variable))
 }
+
+
 
 ### Mean, mode or date ####
 

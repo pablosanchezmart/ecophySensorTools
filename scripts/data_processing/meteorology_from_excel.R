@@ -50,23 +50,42 @@ vpd_named_met_2023_2024_processed <- named_met_2023_2024_processed %>%
   mutate(vpd2m_kPa = bigleaf::rH.to.VPD(rh2m_perc/100,t2m_C),
        vpd16m_kPa = bigleaf::rH.to.VPD(rh16m_perc/100,t16m_C),
        vpd28m_kPa = bigleaf::rH.to.VPD(rh16m_perc/100,t28m_C),
-       vpd42m_kPa = bigleaf::rH.to.VPD(rh42m_perc/100,t42m_C))
+       vpd42m_kPa = bigleaf::rH.to.VPD(rh42m_perc/100,t42m_C)) %>%
+  select(-battv_min, ptemp_c_avg)
 
-vpd_named_met_2023_2024_processed <- vpd_named_met_2023_2024_processed
+
+### GAP FILL ####
+
+varsToGapfill <- names(vpd_named_met_2023_2024_processed)[!names(vpd_named_met_2023_2024_processed) %in% c("timestamp", "date", "yday", "precip_mm")]
+
+vpd_named_met_2023_2024_processed$ID <- "Control"
+
+for(var in varsToGapfill){
+  vpd_named_met_2023_2024_processed <- gapFillTimeSeries(data = vpd_named_met_2023_2024_processed, 
+                                                 variable = var)
+}
+
+vpd_named_met_2023_2024_processed$ID <- NULL
+
+names(vpd_named_met_2023_2024_processed)
+
+
+#### SAVE ---------------------------------------------------------------------- ####
+
 
 write_csv(vpd_named_met_2023_2024_processed, paste0(processed_folder_out,
-                                          min(vpd_named_met_2023_2024_processed$date), "-", 
-                                          max(vpd_named_met_2023_2024_processed$date),
+                                          min(as_date(vpd_named_met_2023_2024_processed$date), na.rm = T), "-", 
+                                          max(as_date(vpd_named_met_2023_2024_processed$date), na.rm = T),
                                           "_met_control_processed.csv"))
 
 # to general
 write_csv(vpd_named_met_2023_2024_processed, paste0(root.dir, "data_processed/met/",
-                                                    min(vpd_named_met_2023_2024_processed$date), "-", 
-                                                    max(vpd_named_met_2023_2024_processed$date),
+                                                    min(as_date(vpd_named_met_2023_2024_processed$date), na.rm = T), "-", 
+                                                    max(as_date(vpd_named_met_2023_2024_processed$date), na.rm = T),
                                                     "_met_control_processed.csv"))
 
 
-### FETCH TFE TOWER DATA --------------------------------------------------- ####
+### FETCH TFE TOWER DATA ------------------------------------------------------- ####
 
 raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_meteo/observations/excel_in/TORRE PB/"
 processed_folder_out <- paste0("data_processed/met/from_excel/")
@@ -109,17 +128,37 @@ named_met_2023_2024_processed <- data.table::setnames(met_2023_2024_processed,
 vpd_named_met_2023_2024_processed <- named_met_2023_2024_processed %>%
   mutate(vpd_belowRoof_kPa = bigleaf::rH.to.VPD(rh_belowRoof_perc/100, t_mean_belowRoof_C),
          vpd_aboveRoof_kPa = bigleaf::rH.to.VPD(rh_aboveRoof_perc/100, t_aboveRoof_C),
-         vpd42m_kPa = bigleaf::rH.to.VPD(rh42m_perc/100, t42m_mean_C))
+         vpd42m_kPa = bigleaf::rH.to.VPD(rh42m_perc/100, t42m_mean_C)) %>%
+  select(-battv_min, ptemp_c_avg)
 
-head(vpd_named_met_2023_2024_processed)
+names(vpd_named_met_2023_2024_processed)
+
+
+### GAP FILL ####
+
+varsToGapfill <- names(vpd_named_met_2023_2024_processed)[!names(vpd_named_met_2023_2024_processed) %in% c("timestamp", "date", "yday", "precip_mm")]
+
+vpd_named_met_2023_2024_processed$ID <- "TFE"
+
+for(var in varsToGapfill){
+  vpd_named_met_2023_2024_processed <- gapFillTimeSeries(data = vpd_named_met_2023_2024_processed, 
+                                                            variable = var)
+}
+
+vpd_named_met_2023_2024_processed$ID <- NULL
+
+summary(vpd_named_met_2023_2024_processed)
+
+
+#### SAVE ---------------------------------------------------------------------- ####
 
 write_csv(vpd_named_met_2023_2024_processed, paste0(processed_folder_out,
-                                          min(vpd_named_met_2023_2024_processed$date), "-", 
-                                          max(vpd_named_met_2023_2024_processed$date),
+                                          min(as_date(vpd_named_met_2023_2024_processed$date), na.rm = T), "-", 
+                                          max(as_date(vpd_named_met_2023_2024_processed$date), na.rm = T),
                                           "_met_tfe_processed.csv"))
 
 # to general
 write_csv(vpd_named_met_2023_2024_processed, paste0(root.dir, "data_processed/met/",
-                                                    min(vpd_named_met_2023_2024_processed$date), "-", 
-                                                    max(vpd_named_met_2023_2024_processed$date),
+                                                    min(as_date(vpd_named_met_2023_2024_processed$date), na.rm = T), "-", 
+                                                    max(as_date(vpd_named_met_2023_2024_processed$date), na.rm = T),
                                                     "_met_tfe_processed.csv"))
