@@ -246,6 +246,29 @@ tail(sf_30_05_2024.df)
 write_csv(sf_30_05_2024.df, processed_file_out_30_05_2024)
 
 
+#### COLLECTED 26-07-2024 ------------------------------------------------------ ####
+
+raw_folder_in_26_07_2024 <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_sapflow/2024-07-25"
+# processed_file_out <- paste0("data_processed/sapflow/processed_saplfow_", Sys.Date(), ".csv")
+processed_file_out_26_07_2024 <- paste0("data_processed/sapflow/processed_sapflow_2024_07_26.csv")
+
+sf.df <- fetchEMS81(folderIn = raw_folder_in_26_07_2024,
+                    fileOut = processed_file_out_26_07_2024)
+
+sf_26_07_2024.df <- sf.df %>%
+  filter(!is.na(ID)) %>%
+  mutate(date = as_date(timestamp)) %>%
+  filter(date > "2022-01-01") %>%
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+
+unique(sf_26_07_2024.df$ID)
+length(unique(sf_26_07_2024.df$ID))
+head(sf_26_07_2024.df)
+tail(sf_26_07_2024.df)
+
+write_csv(sf_26_07_2024.df, processed_file_out_26_07_2024)
+
+
 #### MERGE DATA TO ENSURE WE HAVE ALL THE TIME SERIES -------------------------- ####
 
 files_path <- list.files("data_processed/sapflow", ".csv", full.names = T)
@@ -285,12 +308,12 @@ tail(sapflow_data)
 
 ### id with problems 
 
-id_problems <- c("Control_252")
-id_parcially_bad <- c("Control_357", "Control_359", "TFE_204", "TFE_211", "TFE_213", "TFE_266")
-id_to_remove <- c(id_problems, id_parcially_bad)
+# id_problems <- c("Control_252")
+# id_parcially_bad <- c("Control_357", "Control_359", "TFE_204", "TFE_211", "TFE_213", "TFE_266")
+# id_to_remove <- c(id_problems, id_parcially_bad)
 
-clean_sapflow_data <- sapflow_data %>%
-  filter(!ID %in% id_to_remove)
+clean_sapflow_data <- sapflow_data
+  # filter(!ID %in% id_to_remove)
 
 ### negative values cleaning
 
@@ -322,21 +345,25 @@ for(id in unique(clean_sapflow_data$ID)){
 }
 
 all_clean_sapflow_data <- all_clean_sapflow_data %>%
+  filter(!is.na(ID)) %>%
   arrange(ID, timestamp)
 
 
 #### GAP FILLING USING MONTHLY MEAN PER HOUR ----------------------------------- ####
 
-gf_all_clean_sapflow_data <- gapFillTimeSeries(data = all_clean_sapflow_data, 
-                                                    variable = "cleaned_bl_sap_flux_Kg_h")
+gf_all_clean_sapflow_data <- gapFillTimeSeries(data = all_clean_sapflow_data,
+                                               variable = "cleaned_bl_sap_flux_Kg_h", 
+                                               method = "monthly_mean",
+                                               id_vars = c("plot", "species"))
 
 gf_all_clean_sapflow_data <- gapFillTimeSeries(data = gf_all_clean_sapflow_data, 
-                                                    variable = "increment_mm")
-
+                                               variable = "increment_mm",
+                                               method = "monthly_mean",
+                                               id_vars = c("plot", "species"))
 summary(gf_all_clean_sapflow_data)
 
 
-#### CALCULATE SAPFLOW PER UNIT AREA ------------------------------------------- ####
+#### CALCULATE SAPFLOW PER UNIT CIRCUMPHERENCE --------------------------------- ####
 
 ### Calculate sapflow per unit area ####
 
@@ -369,15 +396,16 @@ daily_clean_sapflow_data <- aggregate(clean_sapflow_data[, -1],
                                       by = list(clean_sapflow_data$date_id),
                                       FUN = meanOrMode)
 
-sum_daily_clean_sapflow_data <- aggregate(clean_sapflow_data[, "gf_cleaned_bl_sap_flux_Kg_h"],
+sum_daily_clean_sapflow_data <- aggregate(clean_sapflow_data[, c("gf_cleaned_bl_sap_flux_Kg_h", "gf_sap_flux_kg_h_cm")],
                                       by = list(clean_sapflow_data$date_id),
-                                      FUN = sum, na.rm = F) %>%
-  rename(total_daily_sap_flux_kg = x)
+                                      FUN = sum, na.rm = F) %>% 
+  rename(gf_cleaned_bl_sap_flux_Kg_day = gf_cleaned_bl_sap_flux_Kg_h, gf_sap_flux_kg_day_cm = gf_sap_flux_kg_h_cm)
 
 daily_clean_sapflow_data <- merge(daily_clean_sapflow_data, sum_daily_clean_sapflow_data, by = "Group.1", all = T) %>%
   rename(date_id = Group.1) %>%
   mutate(date = ymd(date)) %>%
   select(date, plot, ID, species, everything(), -date_id) %>%
+  filter(!is.na(plot)) %>%
   arrange(ID, date)
 
 head(daily_clean_sapflow_data)
@@ -427,7 +455,9 @@ write_csv(daily_clean_sapflow_data,
 
 #### HOURLY DATA PLOTTING ------------------------------------------------------ ####
 
-gf_clean_sapflow_data_metadata <- read_csv("data_processed/sapflow/complete_datasets/cleaned_processed_sapflow_2022-11-17-2024-06-01.csv")
+gf_clean_sapflow_data_metadata <- read_csv( paste0(root.dir, "data_processed/caxuana_sapflow/cleaned_processed_sapflow_", 
+                                                   as_date(min(gf_clean_sapflow_data_metadata$timestamp)), "-", 
+                                                   as_date(max(gf_clean_sapflow_data_metadata$timestamp)), ".csv"))
 
 
 for(ind in unique(gf_clean_sapflow_data_metadata$ID)){
@@ -468,7 +498,7 @@ for(ind in unique(gf_clean_sapflow_data_metadata$ID)){
   
   
   # Save the plot
-  pdf(paste0("outputs/data_plots/sapflow/hourly/sapflow_", ind, "_", str_replace(unique(ind_data$species), " ", "_"),".pdf"))
+  pdf(paste0("outputs/data_plots/sapflow/hourly/sapflow_", ind, "_", str_replace(na.exclude(unique(ind_data$species)), " ", "_"),".pdf"))
   p <- ggarrange(ind.plot,
             bl_ind.plot,
             area_bl_ind.plot, ncol = 1, nrow = 3, legend = "bottom", common.legend = T)
@@ -479,9 +509,9 @@ for(ind in unique(gf_clean_sapflow_data_metadata$ID)){
 
 #### DAILY DATA PLOTTING ------------------------------------------------------ ####
 
-daily_clean_sapflow_data <- read_csv("data_processed/sapflow/complete_datasets/daily_cleaned_processed_sapflow_2022-11-17-2024-06-01.csv")
-
-### Sap flow individual one by one ####
+daily_clean_sapflow_data <- read_csv( paste0(root.dir, "data_processed/caxuana_sapflow/daily_cleaned_processed_sapflow_", 
+                                             as_date(min(gf_clean_sapflow_data_metadata$timestamp)), "-", 
+                                             as_date(max(gf_clean_sapflow_data_metadata$timestamp)), ".csv"))
 
 for(ind in unique(daily_clean_sapflow_data$ID)){
   
@@ -504,7 +534,7 @@ for(ind in unique(daily_clean_sapflow_data$ID)){
   # gap filled baselined sap flow
   area_bl_ind.plot <- plotTimeSeries(data = ind_data,
                                      xVar = date,
-                                     yVar = gf_sap_flux_kg_h_cm,
+                                     yVar = gf_cleaned_bl_sap_flux_Kg_day,
                                      xLab = "", 
                                      yLab = "gf sapflow per area (kg/h cm2)", 
                                      lineOrPoint = "line", 
@@ -513,14 +543,14 @@ for(ind in unique(daily_clean_sapflow_data$ID)){
   # gap filled baselined sap flow
   daily_ind.plot <- plotTimeSeries(data = ind_data,
                                      xVar = date,
-                                     yVar = total_daily_sap_flux_kg,
+                                     yVar = gf_sap_flux_kg_day_cm,
                                      xLab = "", 
                                      yLab = "daily sapflow (kg)", 
                                      lineOrPoint = "line", 
                                      colorVar = ID)
   
   # Save the plot
-  pdf(paste0("outputs/data_plots/sapflow/daily/sapflow_", ind, "_", str_replace(unique(ind_data$species), " ", "_"),".pdf"))
+  pdf(paste0("outputs/data_plots/sapflow/daily/sapflow_", ind, "_", str_replace(na.exclude(unique(ind_data$species)), " ", "_"),".pdf"))
   p <- ggarrange(bl_ind.plot,
             area_bl_ind.plot,
             daily_ind.plot, ncol = 1, legend = "bottom", common.legend = T)

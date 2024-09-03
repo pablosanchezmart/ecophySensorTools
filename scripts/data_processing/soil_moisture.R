@@ -1182,7 +1182,6 @@ write_csv(selected_unique_tfe_data.df,
 
 
 #### AGGREGATE PER DAY --------------------------------------------------------- ####
-
 ### control ####
 
 selected_unique_control_data.df <- read_csv(paste0("data_processed/soil_moisture/complete_datasets/control_hourly_soil_water_content_", min(selected_unique_control_data.df$date), "_", max(selected_unique_control_data.df$date), ".csv"))

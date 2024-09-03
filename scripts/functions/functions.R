@@ -966,14 +966,14 @@ gapFillTimeSeries <- function(data = NULL,
       
     for(m in unique(data$month)){
       
-      if(length(id_sf_data$timestamp) < 1){
-        next("no data for this month")
-      }
-      
       # id data
       id_sf_data <- data %>%
         filter(ID == id) %>%
         filter(month == m)
+      
+      if(length(id_sf_data$timestamp) < 1){
+        next("no data for this month")
+      }
       
       ## generate full time series (to gap fill in some cases)
       
@@ -1090,7 +1090,7 @@ meanOrMode <- function (x){
   }
 }
 
-###  Combine datasets ####
+### Combine datasets ####
 
 combineData <- function(data, variablesToCombine){
   
