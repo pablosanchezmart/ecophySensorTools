@@ -356,18 +356,18 @@ raw.df <- fetchTeros12(folderIn = raw_folder_in,
 
 unique(raw.df$label)
 
-a <- raw.df %>%
-  filter(label == "z6-20609_Port_2")
+# a <- raw.df %>%
+  # filter(label == "z6-20609_Port_2")
 
 # we need to translate from label to tree id, to do so we will use the following object: labelToID.data, which comes from the metadata where we have the
 # relationship between loggers and tree ID
 
 labelToID.data <- readxl::read_excel(paste0(root.dir, "data_processed/metadata_cax_radar/cax_radar_metadata_caxiuana_03_2024.xlsx"),
-                                     sheet = "2024_05_metadata") %>%
+                                     sheet = "2024_07_metadata") %>%
   # filter(!is.na(teros12_logger)) %>%
   # mutate(label = paste0(teros12_logger, "_", teros12_port)) %>%
   select(ID, plot, species, size_class, contains("teros12_logger"), teros12_port)
-
+View(labelToID.data)
 # adjust the code to the fact that we had to replace some loggers
 logger_names <- names(labelToID.data)[str_detect(names(labelToID.data), "teros12_logger")]
 
@@ -395,7 +395,7 @@ processed.list <- processTeros12(rawDataFile = raw_file_out,
                                  fileOut = processed_file_out)
 # View(labelToID.data_newLoggers)
 
-ind <- "TFE_168"
+ind <- "palm_1"
 
 ind_data <- processed.list$processed_data %>%
   filter(ID == ind) %>%
@@ -616,12 +616,24 @@ tail(daily_clean_stem_wc_data)
 ### hourly data ####
 tail(gf_all_stem_wc_data)
 
+palm_gf_all_stem_wc_data <- gf_all_stem_wc_data %>%
+  filter(ID %in% paste0("palm_", 1:6))
+
+gf_all_stem_wc_data <-  gf_all_stem_wc_data %>%
+  filter(!ID %in% paste0("palm_", 1:6))
+
 ## to project directory
 
 write_csv(gf_all_stem_wc_data, 
           paste0("data_processed/stem_water_content/complete_datasets/processed_stem_water_content_", 
                  as_date(min(gf_all_stem_wc_data$timestamp)), "-", 
                  as_date(max(gf_all_stem_wc_data$timestamp)), ".csv")
+)
+
+write_csv(palm_gf_all_stem_wc_data, 
+          paste0("data_processed/stem_water_content/complete_datasets/palms_processed_stem_water_content_", 
+                 as_date(min(palm_gf_all_stem_wc_data$timestamp)), "-", 
+                 as_date(max(palm_gf_all_stem_wc_data$timestamp)), ".csv")
 )
 
 ## to general directory
@@ -632,8 +644,20 @@ write_csv(gf_all_stem_wc_data,
                  as_date(max(gf_all_stem_wc_data$timestamp)), ".csv")
 )
 
+write_csv(palm_gf_all_stem_wc_data, 
+          paste0(root.dir, "data_processed/caxiuana_stem_water_content/palms_processed_stem_water_content_", 
+                 as_date(min(palm_gf_all_stem_wc_data$timestamp)), "-", 
+                 as_date(max(palm_gf_all_stem_wc_data$timestamp)), ".csv")
+)
+
 
 ### daily data ####
+
+palm_daily_clean_stem_wc_data <- daily_clean_stem_wc_data %>%
+  filter(ID %in% paste0("palm_", 1:6))
+
+daily_clean_stem_wc_data <-  daily_clean_stem_wc_data %>%
+  filter(!ID %in% paste0("palm_", 1:6))
 
 ## to project directory
 
@@ -643,12 +667,24 @@ write_csv(daily_clean_stem_wc_data,
                  as_date(max(as_datetime(daily_clean_stem_wc_data$date))), ".csv")
 )
 
+write_csv(palm_daily_clean_stem_wc_data, 
+          paste0("data_processed/stem_water_content/complete_datasets/palms_daily_processed_stem_water_content_",
+                 as_date(min(as_datetime(palm_daily_clean_stem_wc_data$date))), "-", 
+                 as_date(max(as_datetime(palm_daily_clean_stem_wc_data$date))), ".csv")
+)
+
 ## to general directory
 
 write_csv(daily_clean_stem_wc_data, 
           paste0(root.dir, "data_processed/caxiuana_stem_water_content/daily_processed_stem_water_content_", 
                  as_date(min(as_datetime(daily_clean_stem_wc_data$date))), "-", 
                  as_date(max(as_datetime(daily_clean_stem_wc_data$date))), ".csv")
+)
+
+write_csv(palm_daily_clean_stem_wc_data, 
+          paste0(root.dir, "data_processed/caxiuana_stem_water_content/palms_daily_processed_stem_water_content_", 
+                 as_date(min(as_datetime(palm_daily_clean_stem_wc_data$date))), "-", 
+                 as_date(max(as_datetime(palm_daily_clean_stem_wc_data$date))), ".csv")
 )
 
 
@@ -717,6 +753,113 @@ for(ind in unique(daily_gf_all_stem_wc_data$ID)){
   
   # ind <- "Control_211"
   ind_data <- daily_gf_all_stem_wc_data %>%
+    filter(ID == ind)
+  # filter(date == "2023-11-12")
+  
+  # raw water content
+  ind.plot <- plotTimeSeries(data = ind_data,
+                             xVar = date,
+                             yVar = water_content_m3.m3,
+                             xLab = "", 
+                             yLab = "stem wc (m3/m3)", 
+                             lineOrPoint = "line", 
+                             colorVar = ID)
+  
+  # gap filled and calibrated water content
+  gf_ind.plot <- plotTimeSeries(data = ind_data,
+                                xVar = date,
+                                yVar = gf_clean_calibrated_water_content_m3.m3,
+                                xLab = "", 
+                                yLab = "gf cl stem wc (m3/m3)", 
+                                lineOrPoint = "line", 
+                                colorVar = ID)
+  
+  # temperature corrected gap filled and calibrated water content
+  tc_ind.plot <- plotTimeSeries(data = ind_data,
+                                xVar = date,
+                                yVar = tempCor_gf_clean_calibrated_water_content_m3.m3,
+                                xLab = "", 
+                                yLab = "tc gf cl stem wc (m3/m3)", 
+                                lineOrPoint = "line", 
+                                colorVar = ID)
+  
+  # Save the plot
+  pdf(paste0("outputs/data_plots/stem_water_content/daily/stem_wc_", ind, "_", str_replace(unique(ind_data$species), " ", "_"),".pdf"))
+  p <- ggarrange(ind.plot,
+                 gf_ind.plot,
+                 tc_ind.plot, ncol = 1, legend = "bottom", common.legend = T)
+  plot(p)
+  dev.off()
+}
+
+
+
+#### SUBDAILY DATA PLOTTING PALMS ---------------------------------------------- ####
+
+palm_gf_all_stem_wc_data <- read_csv("data_processed/stem_water_content/complete_datasets/palms_processed_stem_water_content_2023-05-02-2024-07-25.csv")
+# gf_all_stem_wc_data <- read_csv("data_processed/stem_water_content/complete_datasets/processed_stem_water_content_2023-05-02-2024-05-31.csv")
+
+
+for(ind in unique(palm_gf_all_stem_wc_data$ID)){
+  
+  # ind <- "Control_204"
+  
+  ind_data <- palm_gf_all_stem_wc_data %>%
+    filter(ID == ind) %>% 
+    mutate(date = as_date(timestamp))
+  # filter(date == "2023-11-12")
+  
+  # raw water content
+  ind.plot <- plotTimeSeries(data = ind_data,
+                             xVar = timestamp,
+                             yVar = water_content_m3.m3,
+                             xLab = "", 
+                             yLab = "stem wc (m3/m3)", 
+                             lineOrPoint = "line", 
+                             colorVar = ID) + 
+    scale_x_datetime(date_breaks = "1 month", date_labels = "%b")
+  
+  # gap filled and calibrated water content
+  gf_ind.plot <- plotTimeSeries(data = ind_data,
+                                xVar = timestamp,
+                                yVar = gf_clean_calibrated_water_content_m3.m3,
+                                xLab = "", 
+                                yLab = "gf cl stem wc (m3/m3)", 
+                                lineOrPoint = "line", 
+                                colorVar = ID) + 
+    scale_x_datetime(date_breaks = "1 month", date_labels = "%b")
+  
+  # temperature corrected gap filled and calibrated water content
+  tc_ind.plot <- plotTimeSeries(data = ind_data,
+                                xVar = timestamp,
+                                yVar = tempCor_gf_clean_calibrated_water_content_m3.m3,
+                                xLab = "", 
+                                yLab = "tc gf cl stem wc (m3/m3)", 
+                                lineOrPoint = "line", 
+                                colorVar = ID) + 
+    scale_x_datetime(date_breaks = "1 month", date_labels = "%b")
+  
+  # Save the plot
+  pdf(paste0("outputs/data_plots/stem_water_content/hourly/stem_wc_", ind, "_", str_replace(unique(ind_data$species), " ", "_"),".pdf"))
+  p <- ggarrange(ind.plot,
+                 gf_ind.plot,
+                 tc_ind.plot,
+                 ncol = 1, nrow = 3, legend = "bottom", common.legend = T)
+  plot(p)
+  dev.off()
+}
+
+
+
+#### DAILY DATA PLOTTING PALMS ------------------------------------------------- ####
+
+palm_daily_gf_all_stem_wc_data <- read_csv("data_processed/stem_water_content/complete_datasets/palms_daily_processed_stem_water_content_2023-05-02-2024-07-25.csv")
+
+for(ind in unique(palm_daily_gf_all_stem_wc_data$ID)){
+  
+  
+  # ind <- "Control_211"
+  ind_data <- palm_daily_gf_all_stem_wc_data %>%
     filter(ID == ind)
   # filter(date == "2023-11-12")
   

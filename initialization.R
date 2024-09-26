@@ -58,7 +58,7 @@ library(ggplot2)
 library(ggpubr)
 library(lubridate)
 library(hms)
-library(TrEvol)
+# library(TrEvol)
 library(lme4)
 library(lmerTest)
 library(MuMIn)
@@ -66,6 +66,8 @@ library(interactions)
 library(stringr)
 library(data.table)
 library(readxl)
+
+library(imputeTS)
 
 #### PARAMETERS ---------------------------------------------------------------- ####
 
