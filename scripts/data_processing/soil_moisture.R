@@ -883,6 +883,187 @@ for(variable in names(tfe_soil.df)[c(-1, -2, -3, -4)]){
 }
 
 
+
+
+#### 20-12-2025 -----------------------------------------------------------------####
+
+### Determine whether it is control or TFE pits
+
+notIdentified <- soilDataIdentificator(folderIn = "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_soil_moisture/2024-12-20/",
+                                       folderOutA = "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_soil_moisture/2024-12-20/control/",
+                                       folderOutB = "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_soil_moisture/2024-12-20/tfe/")
+
+if(!is.null(notIdentified)){
+  print("Some plot data cannot be identified")
+  write_delim(as.data.frame(notIdentified), "raw_data_not_automatically_identified.csv")
+}
+
+### CONTROL ####
+
+## STEP 1: set the location of the original data to process and the files where we want the output to be stored
+
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_soil_moisture/2024-12-20/control/"
+processed_folder_out <- paste0("data_processed/soil_moisture/")
+
+
+### STEP 2: apply the functions to fetch the original data and process it
+
+control_soil_vw_all.df <- data.frame()
+control_soil_swp_all.df <- data.frame()
+
+for(file in list.files(raw_folder_in, full.names = T)){
+  
+  if(str_detect(file, "vw")){
+    control_soil_vw.df <- fetchMet(file = file,
+                                   # fileOut = processed_file_out,
+                                   plot = "Control")
+    
+    control_soil_vw_all.df <- bind_rows(control_soil_vw_all.df, control_soil_vw.df) %>%
+      arrange(timestamp)
+  } else {
+    if(str_detect(file, "swp")){
+      control_soil_swp.df <- fetchMet(file = file,
+                                      # fileOut = processed_file_out,
+                                      plot = "Control")
+      
+      control_soil_swp_all.df <- bind_rows(control_soil_swp_all.df, control_soil_swp.df) %>%
+        arrange(timestamp)
+    } else{
+      print("logger not specified in file name")
+    }
+    
+  }
+}
+
+# Rename final dataset
+names(control_soil_vw.df)
+control_soil.df <- control_soil_vw.df %>%
+  select(-contains("ptemp"), -contains("us")) %>%
+  rename(vwc_sup_m3_m3  = vw_sup, vwc_50cm_m3_m3  = vw_50cm_avg, vwc_100cm_m3_m3  = vw_100cm_avg, 
+         vwc_250cm_m3_m3  = vw_250cm_avg, vwc_400cm_m3_m3 = vw_400cm_avg) 
+head(control_soil.df)
+
+# add year variable to see which years are represented
+
+control_soil.df$year <- year(control_soil.df$timestamp)
+control_soil.df$date <- as_date(control_soil.df$timestamp)
+
+unique(control_soil.df$year) # 2023-2024
+
+# Aggregate by datetime to make sure we only have one observation per time step
+
+unique_control_soil.df <- aggregate(control_soil.df, 
+                                    by = list(control_soil.df$timestamp), 
+                                    FUN = mean, 
+                                    na.rm = T) %>%
+  select(timestamp, date, year, everything(), -Group.1)
+
+
+# save
+
+tail(unique_control_soil.df)
+
+write_csv(unique_control_soil.df, paste0(processed_folder_out,
+                                         min(unique_control_soil.df$date), "-", max(unique_control_soil.df$date), 
+                                         "_soil_moisture_control_processed.csv"))
+
+
+## repeat for TFE plot
+
+#### TFE ####
+
+### FETCH TFE PITS DATA
+
+## STEP 1: set the location of the original data to process and the files where we want the output to be stored
+
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_soil_moisture/2024-12-20/tfe/"
+processed_folder_out <- paste0("data_processed/soil_moisture/")
+
+
+## STEP 2: apply the functions to fetch the original data and process it
+
+tfe_soil_vw_all.df <- data.frame()
+tfe_soil_swp_all.df <- data.frame()
+
+for(file in list.files(raw_folder_in, full.names = T)){
+  
+  if(str_detect(file, "vw")){
+    tfe_soil_vw.df <- fetchMet(file = file,
+                               # fileOut = processed_file_out,
+                               plot = "tfe")
+    
+    tfe_soil_vw_all.df <- bind_rows(tfe_soil_vw_all.df, tfe_soil_vw.df) %>%
+      arrange(timestamp)
+  } else {
+    if(str_detect(file, "swp")){
+      tfe_soil_swp.df <- fetchMet(file = file,
+                                  # fileOut = processed_file_out,
+                                  plot = "tfe")
+      
+      tfe_soil_swp_all.df <- bind_rows(tfe_soil_swp_all.df, tfe_soil_swp.df) %>%
+        arrange(timestamp)
+    } else{
+      print("logger not specified in file name")
+    }
+    
+  }
+}
+
+# Rename final dataset
+names(tfe_soil_vw.df)
+tfe_soil.df <- tfe_soil_vw.df %>%
+  rename(vwc_sup_m3_m3  = vw_2, vwc_50cm_m3_m3  = vw_4, vwc_100cm_m3_m3  = vw_5, 
+         vwc_250cm_m3_m3  = vw_6, vwc_400cm_m3_m3 = vw_7) %>%
+  select(timestamp, record, vwc_sup_m3_m3, vwc_50cm_m3_m3, vwc_100cm_m3_m3, vwc_250cm_m3_m3, vwc_400cm_m3_m3)
+head(tfe_soil.df)
+
+tfe_soil.df$year <- year(tfe_soil.df$timestamp)
+tfe_soil.df$date <- as_date(tfe_soil.df$timestamp)
+
+unique(tfe_soil.df$year) # 2022 to 2024
+
+# Aggregate by datetime to make sure we only have one observation per time step
+
+unique_tfe_soil.df <- aggregate(tfe_soil.df, 
+                                by = list(tfe_soil.df$timestamp), 
+                                FUN = mean, 
+                                na.rm = T) %>%
+  select(timestamp, date, year, everything(), -Group.1)
+
+
+# save
+
+write_csv(unique_tfe_soil.df, paste0(processed_folder_out,
+                                     min(unique_tfe_soil.df$date), "-", max(unique_tfe_soil.df$date), 
+                                     "_soil_moisture_tfe_processed.csv"))
+
+## STEP 3: data visualization
+
+tfe_soil.df <- as.data.frame(read_csv(paste0(processed_folder_out,
+                                             min(unique_tfe_soil.df$date), "-", max(unique_tfe_soil.df$date), 
+                                             "_soil_moisture_tfe_processed.csv")))
+
+for(variable in names(tfe_soil.df)[c(-1, -2, -3, -4)]){
+  
+  tfe_soil.df$variable <- tfe_soil.df[, variable]
+  
+  tfe.plot <- plotTimeSeries(data = tfe_soil.df,
+                             xVar = timestamp,
+                             yVar = variable,
+                             xLab = "time", 
+                             yLab = variable, 
+                             lineOrPoint = "line")
+  plot(tfe.plot)
+  
+  # Save the plot
+  pdf(paste0("outputs/data_plots/soil_moisture/tfe_", variable, ".pdf"))
+  plot(tfe.plot)
+  dev.off()
+  
+  tfe_soil.df$variable <- NULL
+}
+
+
 #### MERGE DATA TO ENSURE WE HAVE ALL THE TIME SERIES ##########################
 ### CONTROL ####
 

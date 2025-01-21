@@ -799,17 +799,37 @@ soilDataIdentificator <- function(folderIn = NULL,
   
   for(file in file.list){
     
-    logger.data <- as.data.frame(
-      read_csv(file, 
-               # skip = 1,
-               na = "7999", col_names = F)
-    )[1, ]
-    
-    dates <- as.data.frame(
-      read_csv(file, 
-               skip = 1,
-               na = "7999")
-    )[-c(1, 2), ]
+    if(str_detect(file, "xlsx")){
+      
+      cnames <- as.character(read_excel(file, col_names = F)[2, ])
+      
+      logger.data <- as.data.frame(
+        read_excel(file, 
+                 # skip = 1,
+                 na = "7999", , col_names = F)
+      )[1, ]
+
+      dates <- as.data.frame(
+        read_excel(file, 
+                 skip = 4,
+                 na = "7999", col_names = cnames)
+      )
+      
+    } else {
+      
+      logger.data <- as.data.frame(
+        read_csv(file, 
+                 # skip = 1,
+                 na = "7999", col_names = F)
+      )[1, ]
+      
+      dates <- as.data.frame(
+        read_csv(file, 
+                 skip = 1,
+                 na = "7999")
+      )[-c(1, 2), ]
+    }
+
     
     if(isFALSE("TIMESTAMP" %in% names(dates))){
       next(paste0(file, "does not contain data."))
@@ -830,8 +850,11 @@ soilDataIdentificator <- function(folderIn = NULL,
       pull(date)
     
     # raw data new name
-    filename <- paste0(label, "_", paste0(dates, collapse = "_"), "_", str_replace(logger.data[, 2], " ", "_"), ".dat")
-    
+    if(str_detect(file, "xlsx")){
+    filename <- paste0(label, "_", paste0(dates, collapse = "_"), "_", str_replace(logger.data[, 2], " ", "_"), ".xlsx")
+    } else {
+      filename <- paste0(label, "_", paste0(dates, collapse = "_"), "_", str_replace(logger.data[, 2], " ", "_"), ".dat")
+    }
     # save raw data in plot folder
     
     if(str_detect(logger.data[, 2], "A") | str_detect(file, "PA")){
@@ -880,12 +903,25 @@ fetchMet <- function(file = NULL,
   
   # function to read individual files and change from wide to long format
   readMetCsv <- function(file){
-    df <- as.data.frame(
-      read_csv(file, 
-               skip = 1,
-               na = "7999")
-    )[-c(1, 2), ]
     
+    if(str_detect(file, "xlsx")){
+      
+      cnames <- as.character(read_excel(file, col_names = F)[2, ])
+      
+      df <- as.data.frame(
+        read_excel(file, 
+                 skip = 4,
+                 na = "7999", col_names = cnames)
+      )
+      
+    } else{
+      df <- as.data.frame(
+        read_csv(file, 
+                 skip = 1,
+                 na = "7999")
+      )[-c(1, 2), ]
+}
+
     for(i in 2:length(df)){
       df[, i] <- as.numeric(df[, i])
     }

@@ -415,6 +415,84 @@ ind.plot <- plotTimeSeries(data = ind_data,
 ind.plot
 
 
+
+#### COLLECTED 2024-11-15 () ---------------------------------- ####
+
+# STEP 1: set the location of the original data to process and the files where we want the output to be stored
+
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_stem_water_content/2024-11-15"
+raw_file_out <- paste0("data_raw/stem_water_content/raw_stem_water_content_2024_11_15.csv")
+processed_file_out <- paste0("data_processed/stem_water_content/processed_stem_water_content_2024_11_15.csv")
+
+# STEP 2: apply the functions to fetch the original data and process it
+
+raw.df <- fetchTeros12(folderIn = raw_folder_in,
+                       fileOut = raw_file_out) %>%
+  arrange(timestamp)
+
+unique(raw.df$label)
+
+# a <- raw.df %>%
+# filter(label == "z6-20609_Port_2")
+
+# we need to translate from label to tree id, to do so we will use the following object: labelToID.data, which comes from the metadata where we have the
+# relationship between loggers and tree ID
+
+labelToID.data <- readxl::read_excel(paste0(root.dir, "data_processed/metadata_cax_radar/cax_radar_metadata_caxiuana_11_2024.xlsx"),
+                                     sheet = "2024_07_metadata") %>%
+  # filter(!is.na(teros12_logger)) %>%
+  # mutate(label = paste0(teros12_logger, "_", teros12_port)) %>%
+  select(ID, plot, species, size_class, contains("teros12_logger"), teros12_port)
+View(labelToID.data)
+# adjust the code to the fact that we had to replace some loggers
+logger_names <- names(labelToID.data)[str_detect(names(labelToID.data), "teros12_logger")]
+
+labelToID.data_newLoggers <- data.frame()
+for(logger_name in logger_names){
+  
+  labelToID.data_newLogger <- labelToID.data[!is.na(labelToID.data[, logger_name]), ] %>%
+    select(ID, plot, species, size_class, all_of(logger_name), teros12_port)
+  
+  names(labelToID.data_newLogger)[names(labelToID.data_newLogger) == logger_name] <- "teros12_logger"
+  
+  labelToID.data_newLoggers <- rbind(labelToID.data_newLoggers, labelToID.data_newLogger)
+}
+
+labelToID.data_newLoggers <- labelToID.data_newLoggers %>%
+  mutate(label = paste0(teros12_logger, "_", teros12_port)) %>%
+  select(ID, plot, species, size_class, label)
+
+## process data
+# unique(raw.df$label)
+processed.list <- processTeros12(rawDataFile = raw_file_out,
+                                 rawData = NULL,
+                                 labelToIDFile = NULL,
+                                 labelToID = labelToID.data_newLoggers,
+                                 fileOut = processed_file_out)
+# View(labelToID.data_newLoggers)
+
+ind <- "palm_1"
+
+ind_data <- processed.list$processed_data %>%
+  filter(ID == ind) %>%
+  mutate(date = as_date(timestamp)) %>%
+  filter(date > "2023-01-01") %>%
+  arrange(timestamp)
+tail(ind_data)
+
+# raw water content
+ind.plot <- plotTimeSeries(data = ind_data,
+                           xVar = timestamp,
+                           yVar = water_content_m3.m3,
+                           xLab = "",
+                           yLab = "stem wc (m3/m3)",
+                           lineOrPoint = "line",
+                           colorVar = ID) +
+  scale_x_datetime(date_breaks = "1 month", date_labels = "%b")
+ind.plot
+
+
+
 #### MERGE DATA TO ENSURE WE HAVE ALL THE TIME SERIES -------------------------- ####
 
 files_path <- list.files("data_processed/stem_water_content", ".csv", full.names = T)

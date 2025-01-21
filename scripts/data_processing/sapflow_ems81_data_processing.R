@@ -269,6 +269,98 @@ tail(sf_26_07_2024.df)
 write_csv(sf_26_07_2024.df, processed_file_out_26_07_2024)
 
 
+#### COLLECTED 10-09-2024 ------------------------------------------------------ ####
+
+raw_folder_in_2024_09_10 <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_sapflow/2024-09-10"
+# processed_file_out <- paste0("data_processed/sapflow/processed_saplfow_", Sys.Date(), ".csv")
+processed_file_out_2024_09_10 <- paste0("data_processed/sapflow/processed_sapflow_2024-09-10.csv")
+
+sf.df <- fetchEMS81(folderIn = raw_folder_in_2024_09_10,
+                    fileOut = processed_file_out_2024_09_10)
+
+sf_2024_09_10.df <- sf.df %>%
+  filter(!is.na(ID)) %>%
+  mutate(date = as_date(timestamp)) %>%
+  filter(date > "2022-01-01") %>%
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+
+unique(sf_2024_09_10.df$ID)
+length(unique(sf_2024_09_10.df$ID))
+head(sf_2024_09_10.df)
+tail(sf_2024_09_10.df)
+
+write_csv(sf_2024_09_10.df, processed_file_out_2024_09_10)
+
+
+#### COLLECTED 2024-09-25 ------------------------------------------------------ ####
+
+raw_folder_in_2024_09_25 <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_sapflow/2024_09_25"
+# processed_file_out <- paste0("data_processed/sapflow/processed_saplfow_", Sys.Date(), ".csv")
+processed_file_out_2024_09_25 <- paste0("data_processed/sapflow/processed_sapflow_2024-09-10.csv")
+
+sf.df <- fetchEMS81(folderIn = raw_folder_in_2024_09_25,
+                    fileOut = processed_file_out_2024_09_25)
+
+sf_2024_09_25.df <- sf.df %>%
+  filter(!is.na(ID)) %>%
+  mutate(date = as_date(timestamp)) %>%
+  filter(date > "2022-01-01") %>%
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+
+unique(sf_2024_09_25.df$ID)
+length(unique(sf_2024_09_25.df$ID))
+head(sf_2024_09_25.df)
+tail(sf_2024_09_25.df)
+
+write_csv(sf_2024_09_25.df, processed_file_out_2024_09_25)
+
+
+#### COLLECTED 2024-11-14 ------------------------------------------------------ ####
+
+raw_folder_in_2024_11_14 <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_sapflow/2024_11_14"
+# processed_file_out <- paste0("data_processed/sapflow/processed_saplfow_", Sys.Date(), ".csv")
+processed_file_out_2024_11_14 <- paste0("data_processed/sapflow/processed_sapflow_2024-11-14.csv")
+
+sf.df <- fetchEMS81(folderIn = raw_folder_in_2024_11_14,
+                    fileOut = processed_file_out_2024_11_14)
+
+sf_2024_11_14.df <- sf.df %>%
+  filter(!is.na(ID)) %>%
+  mutate(date = as_date(timestamp)) %>%
+  filter(date > "2022-01-01") %>%
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+
+unique(sf_2024_11_14.df$ID)
+length(unique(sf_2024_11_14.df$ID))
+head(sf_2024_11_14.df)
+tail(sf_2024_11_14.df)
+
+write_csv(sf_2024_11_14.df, processed_file_out_2024_11_14)
+
+
+#### COLLECTED 2024-11-15 ------------------------------------------------------ ####
+
+raw_folder_in_2024_11_15 <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_sapflow/2024_11_15"
+# processed_file_out <- paste0("data_processed/sapflow/processed_saplfow_", Sys.Date(), ".csv")
+processed_file_out_2024_11_15 <- paste0("data_processed/sapflow/processed_sapflow_2024-11-14.csv")
+
+sf.df <- fetchEMS81(folderIn = raw_folder_in_2024_11_15,
+                    fileOut = processed_file_out_2024_11_15)
+
+sf_2024_11_15.df <- sf.df %>%
+  filter(!is.na(ID)) %>%
+  mutate(date = as_date(timestamp)) %>%
+  filter(date > "2022-01-01") %>%
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+
+unique(sf_2024_11_15.df$ID)
+length(unique(sf_2024_11_15.df$ID))
+head(sf_2024_11_15.df)
+tail(sf_2024_11_15.df)
+
+write_csv(sf_2024_11_15.df, processed_file_out_2024_11_15)
+
+
 #### MERGE DATA TO ENSURE WE HAVE ALL THE TIME SERIES -------------------------- ####
 
 files_path <- list.files("data_processed/sapflow", ".csv", full.names = T)
@@ -507,7 +599,7 @@ for(ind in unique(gf_clean_sapflow_data_metadata$ID)){
 }
 
 
-#### DAILY DATA PLOTTING ------------------------------------------------------ ####
+#### DAILY DATA PLOTTING ------------------------------------------------------- ####
 
 daily_clean_sapflow_data <- read_csv( paste0(root.dir, "data_processed/caxuana_sapflow/daily_cleaned_processed_sapflow_", 
                                              as_date(min(gf_clean_sapflow_data_metadata$timestamp)), "-", 
