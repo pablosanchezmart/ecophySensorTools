@@ -667,9 +667,15 @@ fetchEMS81 <- function(folderIn = NULL,
     if(all(is.na(id_subset$sap_flux_kg_h))){
       next()
     }
+    noNa_id_subset <- id_subset %>%
+      filter(!is.na(sap_flux_kg_h))
+    if(length(noNa_id_subset$sap_flux_kg_h < 3)){
+      next()
+    }
     
     # Step 2b: Perform quantile regression for the specific id.
-    quant_reg <- rq(sap_flux_kg_h ~ timestamp, data = id_subset, tau = 0.1)
+
+    quant_reg <- rq(sap_flux_kg_h ~ timestamp, data = id_subset, tau = 0.1, na.action = na.omit)
     
     # Step 2c: Predict baseline using the quantile regression.
     baseline <- predict(quant_reg, newdata = id_subset)

@@ -361,6 +361,29 @@ tail(sf_2024_11_15.df)
 write_csv(sf_2024_11_15.df, processed_file_out_2024_11_15)
 
 
+#### COLLECTED 2025-01-25 ------------------------------------------------------ ####
+
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_sapflow/2025-01-25"
+# processed_file_out <- paste0("data_processed/sapflow/processed_saplfow_", Sys.Date(), ".csv")
+processed_file_out <- paste0("data_processed/sapflow/processed_sapflow_2025-01-25.csv")
+
+sf.df <- fetchEMS81(folderIn = raw_folder_in,
+                    fileOut = processed_file_out)
+
+sf.df <- sf.df %>%
+  filter(!is.na(ID)) %>%
+  mutate(date = as_date(timestamp)) %>%
+  filter(date > "2022-01-01") %>%
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+
+unique(sf.df$ID)
+length(unique(sf.df$ID))
+head(sf.df)
+tail(sf.df)
+
+write_csv(sf.df, processed_file_out)
+
+
 #### MERGE DATA TO ENSURE WE HAVE ALL THE TIME SERIES -------------------------- ####
 
 files_path <- list.files("data_processed/sapflow", ".csv", full.names = T)
@@ -554,7 +577,7 @@ gf_clean_sapflow_data_metadata <- read_csv( paste0(root.dir, "data_processed/cax
 
 for(ind in unique(gf_clean_sapflow_data_metadata$ID)){
   
-  # ind <- "Control_211"
+  # ind <- "Control_264"
   
   ind_data <- gf_clean_sapflow_data_metadata %>%
     filter(ID == ind) %>% 
