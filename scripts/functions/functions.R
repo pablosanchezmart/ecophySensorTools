@@ -31,8 +31,8 @@ correctWrongTime <- function(data){
 
 ### Read florapulse water potential raw data ####
 
-fetchFlorapulse <- function(folderIn = NULL,
-                            fileOut = NULL){
+fetchFlorapulse <- function(folderIn = NULL,     # STRING. Path to the folder where the data from loggers is stored
+                            fileOut = NULL){     # STRING. Path to the output. If null, the function will not automatically save the raw data.
   require(readr)
   require(stringr)
   require(dplyr)
@@ -98,11 +98,11 @@ fetchFlorapulse <- function(folderIn = NULL,
 
 ## Process stem water potential data
 
-processFlorapulse <- function(rawDataFile = NULL,
-                              rawData = NULL,
-                              offsetMultiplierFile = NULL,
-                              offsetMultiplier = NULL,
-                              fileOut = NULL){
+processFlorapulse <- function(rawDataFile = NULL,      # STRING. Path to the file where the raw data is stored
+                              rawData = NULL,          # DATA FRAME. Alternative to rawDataFile, you can provide the raw data table here.
+                              useOffsetMultiplier = F, # LOGICAL. if true, offset and multiplier table need to be included (or as part of the metadata) so it they can be used to calculate WP. If already calculated in the raw input, set as false
+                              metaData = NULL,         # DATA FRAME. Metadata table (e.g., to relate sensors to individual labels). It must include info on offset and multiplier (with the following column names: flora_pulse_offset, flora_pulse_multiplier), if useOffsetMultiplier = T.
+                              fileOut = NULL){         # STRING. Path to the output. If null, the function will not automatically save the processed data.
   
   require(readr)
   require(stringr)
@@ -118,57 +118,65 @@ processFlorapulse <- function(rawDataFile = NULL,
     print(paste0("reading raw data from ", rawDataFile))
   }
   
-  # Read multiplier and offset info
-  
-  if(!is.null(offsetMultiplierFile)){
-    offsetMultiplier <- read_csv(offsetMultiplierFile) 
-    print(paste0("reading raw data from ", offsetMultiplierFile))
-  }
-  
-  # sensor identificator
+  # sensor names
   
   processed.df <- rawData %>%
     mutate("flora_pulse_sensor" = str_remove(label, "_AVG"))
-
   
-  # Check whether all sensor names in the field have a offset and multiplier
+  # Read offset and multiplier info (if needed)
   
-  # if(!is.null(offsetMultiplierFile) | !is.null(offsetMultiplier)){
-    # sensorsWithoutOM <- processed.df %>%
-      # filter(!flora_pulse_sensor %in% offsetMultiplier$flora_pulse_sensor) %>%
-      # pull(flora_pulse_sensor) %>%
-      # unique()
+  if(isTRUE(useOffsetMultiplier)){
     
-    # if(length(sensorsWithoutOM > 0)){
-      # warning(paste0("Sensors without Offset multiplier: ", paste0(sensorsWithoutOM, collapse = ", ")))
-    # }
-  # }
-  
-  # process data
-  
-  processed_om.df <- merge(processed.df, offsetMultiplier, 
-                           by = "flora_pulse_sensor", 
-                           all.x = T) %>%
-    filter(!is.na(flora_pulse_sensor)) %>%
-    mutate(wp_bar = value
-      # wp_bar = (flora_pulse_offset + (flora_pulse_multiplier * value))
-      )
+    if(is.null(metaData)){
+      stop("If useOffsetMultiplier = T, metadata with this information needs to be provided as a data frame in the argument metaData")
+    }
 
+      if(isFALSE(c("offset", "multiplier") %in% colnames(metaData))){
+        stop("offset and multiplier columns not found in metadata file.")
+      }
+      print("Using offset and multiplier")
+      
+      # calculate values using offset and multipiler
+      
+      processed_om.df <- merge(processed.df, metaData, 
+                               by = "flora_pulse_sensor", 
+                               all.x = T) %>%
+        filter(!is.na(flora_pulse_sensor)) %>%
+        mutate(wp_bar = (flora_pulse_offset + (flora_pulse_multiplier * value))
+        )
+  } else{
+    
+    # if offset and multiplier already used before raw data (e.g., in the logger or SDI12) include only metadata, if available.
+    
+    if(!is.null(metaData)){
+      processed_om.df <- merge(processed.df, metaData, 
+                               by = "flora_pulse_sensor", 
+                               all.x = T) %>%
+        filter(!is.na(flora_pulse_sensor)) %>%
+        mutate(wp_bar = value
+        )
+    } else{
+      processed_om.df <-processed.df %>%
+        filter(!is.na(flora_pulse_sensor)) %>%
+        mutate(wp_bar = value
+        )
+    }
+  }
   
   # Select and store results
 
-  processed.df <- processed_om.df %>%
-    select(timestamp, ID, plot, species, size_class, flora_pulse_sensor, wp_bar)
-  
-  rslts <- list("processing_table" = processed_om.df,
-                "processed_data" = processed.df)
+  # processed.df <- processed_om.df %>%
+  #   select(timestamp, ID, plot, species, size_class, flora_pulse_sensor, wp_bar)
+  # 
+  # rslts <- list("processing_table" = processed_om.df,
+  #               "processed_data" = processed.df)
   
   if(!is.null(fileOut)){
-    write_csv(processed.df, fileOut)
+    write_csv(processed_om.df, fileOut)
     print(paste0("saving processed data in ", fileOut))
   }
 
-  return(rslts)
+  return(processed_om.df)
 }
 
 

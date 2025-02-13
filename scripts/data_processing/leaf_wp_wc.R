@@ -676,8 +676,7 @@ wp <- readxl::read_excel("C:/Users/psanche2/OneDrive - University of Edinburgh/p
 
 wc <- readxl::read_excel("C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_leaf_water_content_water_potential/caxiuana_water_potentials_vwc_11_2024.xlsx",
                          sheet = 2) %>%
-  mutate(radar = TRUE,
-         plot = ifelse(plot == "A", "Control", "TFE"),
+  mutate(plot = ifelse(plot == "A", "Control", "TFE"),
          id_radar_replique = paste0(plot, "_", ID, "_", radar_replique)) %>%
   select(-ID, -radar_replique, -plot, -date, -notes)
 
@@ -786,7 +785,7 @@ all_wp_wc <- bind_rows(
 names(all_wp_wc)
 head(all_wp_wc)
 tail(all_wp_wc)
-
+all_wp_wc %>% arrange(date)
 write_csv(all_wp_wc, file = "data_processed/leaf_wp_wc/complete_datasets/radar_wp_wc_05_2023_11_2024.csv")
 
 # to general
