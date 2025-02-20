@@ -749,6 +749,7 @@ radar_wp_wc <- radar_wp_wc %>%
 ## Save campaign data
 head(radar_wp_wc)
 tail(radar_wp_wc)
+unique(radar_wp_wc$id)
 write_csv(radar_wp_wc, file = "data_processed/leaf_wp_wc/radar_wp_wc_11_2024.csv")
 
 
