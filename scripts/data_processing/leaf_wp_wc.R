@@ -676,8 +676,7 @@ wp <- readxl::read_excel("C:/Users/psanche2/OneDrive - University of Edinburgh/p
 
 wc <- readxl::read_excel("C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_leaf_water_content_water_potential/caxiuana_water_potentials_vwc_11_2024.xlsx",
                          sheet = 2) %>%
-  mutate(plot = ifelse(plot == "A", "Control", "TFE"),
-         id_radar_replique = paste0(plot, "_", ID, "_", radar_replique)) %>%
+         mutate(id_radar_replique = paste0(plot, "_", ID, "_", radar_replique)) %>%
   select(-ID, -radar_replique, -plot, -date, -notes)
 
 ## data needs to be changed from wide to long format 
@@ -687,7 +686,6 @@ wc <- readxl::read_excel("C:/Users/psanche2/OneDrive - University of Edinburgh/p
 wp_a <- wp %>%
   select(ID, radar, plot, date_pd, Hour_WP_pd, date_md, Hour_WP_md, collector, all_of(names(wp)[str_detect(names(wp), "_1")])) %>%
   mutate(radar_replique = "a",
-         plot = ifelse(plot == "A", "Control", "TFE"),
          Hour_WP_md = format(as.POSIXct(Hour_WP_md), format = "%H:%M"),
          Hour_WP_pd = format(as.POSIXct(Hour_WP_pd), format = "%H:%M"),
          date = ymd(date_md)
@@ -698,7 +696,6 @@ names(wp_a) <- str_remove_all(names(wp_a), "_1")
 wp_b <- wp %>%
   select(ID, radar, plot, date_pd, Hour_WP_pd, date_md, Hour_WP_md, collector, all_of(names(wp)[str_detect(names(wp), "_2")])) %>%
   mutate(radar_replique = "b",
-         plot = ifelse(plot == "A", "Control", "TFE"),
          Hour_WP_md = format(as.POSIXct(Hour_WP_md), format = "%H:%M"),
          Hour_WP_pd = format(as.POSIXct(Hour_WP_pd), format = "%H:%M"),
          date = ymd(date_md)) %>%
@@ -708,7 +705,6 @@ names(wp_b) <- str_remove_all(names(wp_b), "_2")
 wp_c <- wp %>%
   select(ID, radar, plot, date_pd, Hour_WP_pd, date_md, Hour_WP_md, collector, all_of(names(wp)[str_detect(names(wp), "_3")])) %>%
   mutate(radar_replique = "c",
-         plot = ifelse(plot == "A", "Control", "TFE"),
          Hour_WP_md = format(as.POSIXct(Hour_WP_md), format = "%H:%M"),
          Hour_WP_pd = format(as.POSIXct(Hour_WP_pd), format = "%H:%M"),
          date = ymd(date_md)) %>%
