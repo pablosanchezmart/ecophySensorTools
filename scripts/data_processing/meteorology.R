@@ -579,7 +579,211 @@ write_csv(vpd_unique_named_selected_tfe_met_all.df, paste0(processed_folder_out,
                                                            max(as_date(vpd_unique_named_selected_tfe_met_all.df$timestamp)), 
                                                            "_met_tfe_processed.csv"))
 
+#### 25-01-2025 ---------------------------------------------------------------- ####
+
+notIdentified <- dataIdentificator(folderIn = "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_meteo/raw_data/raw_data_in/2025-01-25/",
+                                   folderOutA = "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_meteo/raw_data/raw_data_in/2025-01-25/control/",
+                                   folderOutB = "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_meteo/raw_data/raw_data_in/2025-01-25/tfe/")
+
+if(!is.null(notIdentified)){
+  print("Some plot data cannot be identified")
+  write_delim(as.data.frame(notIdentified), "raw_data_not_automatically_identified.csv")
+}
+
+
+### Control ####
+
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_meteo/raw_data/raw_data_in/2025-01-25/control/"
+processed_folder_out <- paste0("data_processed/met/")
+
+control_met_all_infra.df <- data.frame()
+control_met_all_lba.df <- data.frame()
+
+for(file in list.files(raw_folder_in, full.names = T)){
+  
+  if(str_detect(file, "INFRA")){
+    control_met_infra.df <- fetchMet(file = file,
+                                     # fileOut = processed_file_out,
+                                     plot = "Control")
+    
+    control_met_all_infra.df <- bind_rows(control_met_all_infra.df, control_met_infra.df) %>%
+      arrange(timestamp)
+  } else {
+    if(str_detect(file, "LB")){
+      control_met_lba.df <- fetchMet(file = file,
+                                     # fileOut = processed_file_out,
+                                     plot = "Control")
+      
+      control_met_all_lba.df <- bind_rows(control_met_all_lba.df, control_met_lba.df) %>%
+        arrange(timestamp)
+      
+    } else{
+      print("logger not specified in file name")
+    }
+    
+  }
+}
+
+# Select meteorological variables only
+
+met_variables.names <- readxl::read_excel("C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_meteo/caxiuana_variables_abbreviation.xlsx") %>%
+  select(abbreviation_raw, abbreviation_processing, abbreviation_processed) %>%
+  na.omit()
+
+names(control_met_all_lba.df) <- tolower(names(control_met_all_lba.df))
+selected_control_met_all_lba.df <- control_met_all_lba.df %>%
+  select(any_of(met_variables.names$abbreviation_raw))
+head(control_met_all_lba.df)
+head(selected_control_met_all_lba.df)
+dim(control_met_all_lba.df)
+dim(selected_control_met_all_lba.df)
+
+
+names(control_met_infra.df) <- tolower(names(control_met_infra.df))
+selected_control_met_infra.df <- control_met_infra.df %>%
+  select(any_of(met_variables.names$abbreviation_raw))
+head(control_met_infra.df)
+head(selected_control_met_infra.df)
+dim(control_met_infra.df)
+dim(selected_control_met_infra.df)
+
+# Merge loggers data
+
+control_met.df <- merge(selected_control_met_all_lba.df, 
+                        selected_control_met_infra.df, 
+                        by = "timestamp", 
+                        all = T,
+                        suffixes = c("_infra", "_lba")) # suffixes = c("_infra", "_lba")
+names(control_met.df)
+
+# Combine repeated variables
+
+# variablesToCombine <- str_remove(names(control_met.df)[str_detect(names(control_met.df), ".y")], ".y")
+# combined_control_met.df <- combineData(data = control_met.df, variablesToCombine = variablesToCombine)
+
+# Rename final dataset
+
+raw_processed_names <- met_variables.names %>%
+  filter(abbreviation_processing %in% names(control_met.df))
+
+named_control_met.df <- data.table::setnames(control_met.df, 
+                                             old = raw_processed_names$abbreviation_processing,
+                                             new = raw_processed_names$abbreviation_processed)
+head(named_control_met.df)
+
+summary(named_control_met.df)
+
+# add year variable to see which years are represented
+
+named_control_met.df$year <- year(named_control_met.df$timestamp)
+
+unique(named_control_met.df$year) # 2022 to 2023
+
+# Aggregate by datetime to make sure we only have one observation per time step
+
+unique_named_control_met.df <- aggregate(named_control_met.df, 
+                                         by = list(named_control_met.df$timestamp), 
+                                         FUN = mean, 
+                                         na.rm = T) %>%
+  select(timestamp, year, everything(), -Group.1)
+
+summary(unique_named_control_met.df)
+
+## VPD calculation
+
+vpd_unique_named_control_met.df <- unique_named_control_met.df %>% 
+  mutate(vpd2m_kPa = bigleaf::rH.to.VPD(rh2m_perc/100,t2m_C),
+         vpd16m_kPa = bigleaf::rH.to.VPD(rh16m_perc/100,t16m_C),
+         vpd28m_kPa = bigleaf::rH.to.VPD(rh16m_perc/100,t28m_C),
+         vpd42m_kPa = bigleaf::rH.to.VPD(rh42m_perc/100,t42m_C))
+
+## save
+
+write_csv(vpd_unique_named_control_met.df, paste0(processed_folder_out,
+                                                  min(as_date(vpd_unique_named_control_met.df$timestamp)), "-", 
+                                                  max(as_date(vpd_unique_named_control_met.df$timestamp)), 
+                                                  "_met_control_processed.csv"))
+
+
+### TFE ####
+
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_meteo/raw_data/raw_data_in/2025-01-25/tfe/"
+processed_folder_out <- paste0("data_processed/met/")
+
+
+tfe_met_all.df <- data.frame()
+
+for(file in list.files(raw_folder_in, full.names = T)){
+  
+  tfe_met.df <- fetchMet(file = file,
+                         # fileOut = processed_file_out,
+                         plot = "TFE")
+  
+  tfe_met_all.df <- bind_rows(tfe_met_all.df, tfe_met.df) %>%
+    arrange(timestamp)
+}
+
+# Select meteorological variables only
+
+met_variables.names <- readxl::read_excel("C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_meteo/caxiuana_variables_abbreviation.xlsx",
+                                          sheet = "Torre PB") %>%
+  select(abbreviation_raw, abbreviation_processing, abbreviation_processed) %>%
+  na.omit() %>%
+  mutate(abbreviation_raw = tolower(abbreviation_raw))
+
+names(tfe_met_all.df) <- tolower(names(tfe_met_all.df))
+selected_tfe_met_all.df <- tfe_met_all.df %>%
+  select(timestamp, any_of(met_variables.names$abbreviation_raw))
+head(tfe_met_all.df)
+head(selected_tfe_met_all.df)
+dim(tfe_met_all.df)
+dim(selected_tfe_met_all.df)
+
+# Rename final dataset
+
+raw_processed_names <- met_variables.names %>%
+  filter(abbreviation_raw %in% names(selected_tfe_met_all.df))
+
+named_selected_tfe_met_all.df <- data.table::setnames(selected_tfe_met_all.df, 
+                                                      old = raw_processed_names$abbreviation_raw, 
+                                                      new = raw_processed_names$abbreviation_processed)
+head(named_selected_tfe_met_all.df)
+
+# add year variable to see which years are represented
+
+# named_selected_tfe_met_all.df <- named_selected_tfe_met_all.df %>%
+#   filter(timestamp > "2023-07-01")
+
+named_selected_tfe_met_all.df$year <- year(named_selected_tfe_met_all.df$timestamp)
+
+unique(named_selected_tfe_met_all.df$year) # 2023
+
+# Aggregate by datetime to make sure we only have one observation per time step
+
+unique_named_selected_tfe_met_all.df <- aggregate(named_selected_tfe_met_all.df, by = list(named_selected_tfe_met_all.df$timestamp), FUN = mean, na.rm = T) %>%
+  select(timestamp, year, everything(), -Group.1) %>%
+  mutate(rh_belowRoof_perc = ifelse(rh_belowRoof_perc > 100, 100, rh_belowRoof_perc),
+         rh_aboveRoof_perc = ifelse(rh_aboveRoof_perc > 100, 100, rh_aboveRoof_perc),
+         rh42m_perc = ifelse(rh42m_perc > 100, 100, rh42m_perc)) %>%
+  filter(year > 2000)
+
+## VPD calculation
+
+vpd_unique_named_selected_tfe_met_all.df <- unique_named_selected_tfe_met_all.df %>% 
+  mutate(vpd_belowRoof_kPa = bigleaf::rH.to.VPD(rh_belowRoof_perc/100,t_mean_belowRoof_C),
+         vpd_aboveRoof_kPa = bigleaf::rH.to.VPD(rh_aboveRoof_perc/100,t_aboveRoof_C),
+         vpd42m_kPa = bigleaf::rH.to.VPD(rh42m_perc/100,t42m_mean_C))
+
+## save
+tail(vpd_unique_named_selected_tfe_met_all.df)
+write_csv(vpd_unique_named_selected_tfe_met_all.df, paste0(processed_folder_out,
+                                                           min(as_date(vpd_unique_named_selected_tfe_met_all.df$timestamp)), "-", 
+                                                           max(as_date(vpd_unique_named_selected_tfe_met_all.df$timestamp)), 
+                                                           "_met_tfe_processed.csv"))
+
+
 #### CONTROL COMPLETE DATASET -------------------------------------------------- ####
+
 ### Merge all data ####
 
 files_path <- list.files(processed_folder_out, "control", full.names = T)
@@ -602,15 +806,17 @@ length(unique(data$timestamp))
 length(data$timestamp)
 head(data)
 tail(data)
-summary(data)
+summary()
+
 ## Aggreagate per id and timestamp
 
-# data_aggr <- aggregate(data,
-#                   by = list(data$timestamp_ID),
-#                   FUN = meanOrMode) %>%
-#   select(-Group.1)
-# 
-# unique(data$ID)
+data <- aggregate(data,
+                  by = list(data$timestamp),
+                  FUN = meanOrMode) %>%
+  select(-Group.1)
+
+length(unique(data$timestamp))
+length(data$timestamp)
 
 meteo_control_data <- data %>%
   filter(!is.na(timestamp)) %>%
@@ -620,7 +826,6 @@ meteo_control_data <- data %>%
   arrange(timestamp) %>%
   as.data.frame()
 
-unique(meteo_control_data$timestamp)
 head(meteo_control_data)
 tail(meteo_control_data)
 summary(meteo_control_data)
@@ -680,6 +885,7 @@ daily_clean_meteo_control_data <- daily_clean_meteo_control_data %>%
 head(daily_clean_meteo_control_data)
 tail(daily_clean_meteo_control_data)
 summary(daily_clean_meteo_control_data)
+
 
 #### Save final dataset ####
 
@@ -776,6 +982,7 @@ for(variable in names(cleaned_daily_meteo_control_data)[c(-1, -2)]){
 
 
 #### TFE COMPLETE DATASET -------------------------------------------------- ####
+
 ### Merge all data ####
 
 files_path <- list.files(processed_folder_out, "tfe", full.names = T)
@@ -801,12 +1008,13 @@ tail(data)
 
 ## Aggreagate per id and timestamp
 
-# data_aggr <- aggregate(data,
-#                   by = list(data$timestamp_ID),
-#                   FUN = meanOrMode) %>%
-#   select(-Group.1)
-# 
-# unique(data$ID)
+data <- aggregate(data,
+                  by = list(data$timestamp),
+                  FUN = meanOrMode) %>%
+  select(-Group.1)
+
+length(unique(data$timestamp))
+length(data$timestamp)
 
 meteo_tfe_data <- data %>%
   filter(!is.na(timestamp)) %>%
@@ -961,21 +1169,4 @@ for(variable in names(cleaned_daily_meteo_tfe_data)[c(-1, -2)]){
   
   cleaned_daily_meteo_tfe_data$variable <- NULL
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

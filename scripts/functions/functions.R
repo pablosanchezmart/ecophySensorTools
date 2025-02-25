@@ -731,19 +731,55 @@ dataIdentificator <- function(folderIn = NULL,
                           pattern = ".dat", 
                           full.names = T)
   
+  file.list_xl <- list.files(folderIn, 
+                          pattern = ".xlsx", 
+                          full.names = T)
+  
+  file.list <- c(file.list, file.list_xl)
+  
   for(file in file.list){
     
-    logger.data <- as.data.frame(
-      read_csv(file, 
-               # skip = 1,
-               na = "7999", col_names = F)
-    )[1, ]
+    if(str_detect(file, "xlsx")){
+      
+      cnames <- as.character(read_excel(file, col_names = F)[2, ])
+      cnames <- c("day", "month", "year", "hour", cnames[which(cnames != "NA")])
+      
+      logger.data <- as.data.frame(
+        read_excel(file, 
+                   # skip = 1,
+                   na = "7999", , col_names = F)
+      )[1, ]
+      
+      logger_name <- logger.data[, 5]
+      
+      dates <- as.data.frame(
+        read_excel(file, 
+                   skip = 4,
+                   na = "7999", col_names = cnames)
+      )
+      
+      
+      ## timestamp reconstruction
+      
+      dates$hour <- format(as.POSIXct(dates$hour), format = "%H:%M:%S")
+      dates$TIMESTAMP <- ymd_hms(paste0(dates$year, "-", dates$month, "-", dates$day, " ", dates$hour))
+      
+    } else{
+      logger.data <- as.data.frame(
+        read_csv(file, 
+                 # skip = 1,
+                 na = "7999", col_names = F)
+      )[1, ]
+      
+      logger_name <- logger.data[, 2]
+      
+      dates <- as.data.frame(
+        read_csv(file, 
+                 skip = 1,
+                 na = "7999")
+      )[-c(1, 2), ]
+    }
     
-    dates <- as.data.frame(
-      read_csv(file, 
-               skip = 1,
-               na = "7999")
-    )[-c(1, 2), ]
     
     if(isFALSE("TIMESTAMP" %in% names(dates))){
       next(paste0(file, "does not contain data."))
@@ -754,11 +790,15 @@ dataIdentificator <- function(folderIn = NULL,
       pull(date)
     
     # raw data new name
-    filename <- paste0(paste0(dates, collapse = "_"), "_", str_replace(logger.data[, 2], " ", "_"), ".dat")
+    if(str_detect(file, "xlsx")){
+      filename <- paste0(paste0(dates, collapse = "_"), "_", str_replace(logger_name, " ", "_"), ".xlsx")
+    } else {
+    filename <- paste0(paste0(dates, collapse = "_"), "_", str_replace(logger_name, " ", "_"), ".dat")
+    }
     
     # save raw data in plot folder
     
-    if(str_detect(logger.data[, 2], "A") | str_detect(file, "PA")){
+    if(str_detect(logger_name, "A") | str_detect(file, "PA")){
       
       # Create directory if it does't exist
       dir.create(folderOutA, showWarnings = F)
@@ -766,7 +806,7 @@ dataIdentificator <- function(folderIn = NULL,
       file.copy(file, paste0(folderOutA, filename))
       print(paste0(filename, " saved"))
     } else{
-      if(str_detect(logger.data[, 2], "PB") | str_detect(file, "PB") | str_detect(file, "TORRE B")){
+      if(str_detect(logger_name, "PB") | str_detect(file, "PB") | str_detect(file, "TORRE B") | str_detect(file, "TORRE_B")){
         # Create directory if it does't exist
         dir.create(folderOutB, showWarnings = F)
         # Copy file into directory to separate plot A and B data
@@ -810,6 +850,12 @@ soilDataIdentificator <- function(folderIn = NULL,
   file.list <- list.files(folderIn, 
                           pattern = ".dat", 
                           full.names = T)
+  
+  file.list_xl <- list.files(folderIn, 
+                             pattern = ".xlsx", 
+                             full.names = T)
+  
+  file.list <- c(file.list, file.list_xl)
   
   for(file in file.list){
     
@@ -922,11 +968,28 @@ fetchMet <- function(file = NULL,
       
       cnames <- as.character(read_excel(file, col_names = F)[2, ])
       
+      # problem with location of date in meteo data
+      if(any(is.na(cnames))){
+        cnames <- as.character(read_excel(file, col_names = F)[2, ])
+        cnames <- c("day", "month", "year", "hour", cnames[which(cnames != "NA")])
+      }
+      
       df <- as.data.frame(
         read_excel(file, 
                  skip = 4,
                  na = "7999", col_names = cnames)
       )
+      
+      if(!any(c("TIMESTAMP", "timestamp") %in% cnames)){
+        
+        ## timestamp reconstruction if needed
+        
+        df$hour <- format(as.POSIXct(df$hour), format = "%H:%M:%S")
+        df$TIMESTAMP <- ymd_hms(paste0(df$year, "-", df$month, "-", df$day, " ", df$hour))
+        
+        df <- df %>% 
+          select(TIMESTAMP, everything(), -day, -month, -year, -hour)
+      }
       
     } else{
       df <- as.data.frame(
@@ -941,7 +1004,7 @@ fetchMet <- function(file = NULL,
     }
 
     names(df) <- tolower(names(df))
-    
+
     return(df)
   }
   
