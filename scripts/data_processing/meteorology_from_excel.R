@@ -25,15 +25,25 @@ met_2024_raw <- readxl::read_excel(file.name, sheet = 1)
 
 # names(met_2024_raw)  %in% names(met_2024_raw)
 
+
+### 2025 ####
+
+file.name <- list.files(raw_folder_in, pattern = "Cax_Meteorologico_2025", full.names = T)
+met_2025_raw <- readxl::read_excel(file.name, sheet = 1)
+
+# names(met_2025_raw)  %in% names(met_2024_raw)
+
+
 ### combine and clean ####
 
-met_2023_2024_processed <- bind_rows(met_2023_raw, met_2024_raw) %>%
+met_2023_2024_processed <- bind_rows(met_2023_raw, met_2024_raw, met_2025_raw) %>%
   rename("year" = "Ano", day = "Dia", month = "Mês", "time" = "Hora", yday = "Dias Juliano")  %>%
   mutate(time = as_hms(time),
          date = as_date(make_datetime(year, month, day)),
          timestamp = as_datetime(paste0(date, " ", time))) %>% 
   select(timestamp, date, yday, everything(), -day, -month, -year, -time) %>%
   arrange(timestamp)
+
 
 ### rename and save ####
 
@@ -72,7 +82,7 @@ names(vpd_named_met_2023_2024_processed)
 
 #### SAVE ---------------------------------------------------------------------- ####
 
-
+tail(vpd_named_met_2023_2024_processed)
 write_csv(vpd_named_met_2023_2024_processed, paste0(processed_folder_out,
                                           min(as_date(vpd_named_met_2023_2024_processed$date), na.rm = T), "-", 
                                           max(as_date(vpd_named_met_2023_2024_processed$date), na.rm = T),
@@ -94,19 +104,37 @@ processed_folder_out <- paste0("data_processed/met/from_excel/")
 ### 2023 ####
 
 file.name <- list.files(raw_folder_in, pattern = "2023", full.names = T)
-met_2023_raw <- readxl::read_excel(file.name, sheet = 1)
+met_2023_raw <- readxl::read_excel(file.name, sheet = 1) %>% 
+  mutate(
+    Hora = ymd_hms(Hora),
+    Hora = as.character(hms(hour(Hora), minute(Hora), second(Hora)))
+  ) %>% 
+  mutate(across(6:19, ~as.numeric(as.character(.))))
 
 
 ### 2024 ####
 
 file.name <- list.files(raw_folder_in, pattern = "2024", full.names = T)
-met_2024_raw <- readxl::read_excel(file.name, sheet = 1)
+met_2024_raw <- readxl::read_excel(file.name, sheet = 1) %>%
+  mutate(
+    Hora = format(as.POSIXct(unlist(str_split(as.character(Hora),  " "))[2], format = "%H:%M:%S"), "%H:%M:%S")
+  ) %>% 
+  mutate(across(6:19, ~as.numeric(as.character(.))))
+met_2024_raw
 
-# names(met_2024_raw)%in% names(met_2024_raw)  
+### 2025 ####
+
+file.name <- list.files(raw_folder_in, pattern = "2025", full.names = T)
+met_2025_raw <- readxl::read_excel(file.name, sheet = 1) %>% 
+  mutate(
+    Hora = ymd_hms(Hora),
+    Hora = as.character(hms(hour(Hora), minute(Hora), second(Hora)))
+         )%>% 
+  mutate(across(6:19, ~as.numeric(as.character(.))))
 
 ### combine and clean ####
 
-met_2023_2024_processed <- bind_rows(met_2023_raw, met_2024_raw) %>%
+met_2023_2024_processed <- bind_rows(met_2023_raw, met_2024_raw, met_2025_raw) %>%
   rename("year" = "Ano", day = "Dia", month = "Mês", "time" = "Hora", yday = "Dias Juliano")  %>%
   mutate(time = as_hms(time),
          date = as_date(make_datetime(year, month, day)),
@@ -126,7 +154,10 @@ named_met_2023_2024_processed <- data.table::setnames(met_2023_2024_processed,
                                                       new = raw_processed_names$abbreviation_processed)
 
 vpd_named_met_2023_2024_processed <- named_met_2023_2024_processed %>%
-  mutate(vpd_belowRoof_kPa = bigleaf::rH.to.VPD(rh_belowRoof_perc/100, t_mean_belowRoof_C),
+  mutate(rh_belowRoof_perc = ifelse(rh_belowRoof_perc > 1, 1, rh_belowRoof_perc),
+         rh_aboveRoof_perc = ifelse(rh_aboveRoof_perc > 1, 1, rh_aboveRoof_perc),
+         rh42m_perc = ifelse(rh42m_perc > 1, 1, rh42m_perc),
+         vpd_belowRoof_kPa = bigleaf::rH.to.VPD(rh_belowRoof_perc/100, t_mean_belowRoof_C),
          vpd_aboveRoof_kPa = bigleaf::rH.to.VPD(rh_aboveRoof_perc/100, t_aboveRoof_C),
          vpd42m_kPa = bigleaf::rH.to.VPD(rh42m_perc/100, t42m_mean_C)) %>%
   select(-battv_min, ptemp_c_avg)

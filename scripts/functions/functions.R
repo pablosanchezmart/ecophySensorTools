@@ -677,7 +677,7 @@ fetchEMS81 <- function(folderIn = NULL,
     }
     noNa_id_subset <- id_subset %>%
       filter(!is.na(sap_flux_kg_h))
-    if(length(noNa_id_subset$sap_flux_kg_h < 3)){
+    if(length(noNa_id_subset$sap_flux_kg_h) < 3){
       next()
     }
     
@@ -861,19 +861,23 @@ soilDataIdentificator <- function(folderIn = NULL,
     
     if(str_detect(file, "xlsx")){
       
-      cnames <- as.character(read_excel(file, col_names = F)[2, ])
+      cnames <- as.character(read_excel(file, col_names = F)[1, ])
       
-      logger.data <- as.data.frame(
-        read_excel(file, 
-                 # skip = 1,
-                 na = "7999", , col_names = F)
-      )[1, ]
+      # logger.data <- as.data.frame(
+      #   read_excel(file, 
+      #            # skip = 1,
+      #            na = "7999", , col_names = F)
+      # )[1, ]
+      
+      logger.data <- str_remove_all(basename(file), ".xlsx")
 
       dates <- as.data.frame(
         read_excel(file, 
                  skip = 4,
                  na = "7999", col_names = cnames)
       )
+      
+      names(dates) <- tolower(names(dates))
       
     } else {
       
@@ -892,13 +896,15 @@ soilDataIdentificator <- function(folderIn = NULL,
 
     
     if(isFALSE("TIMESTAMP" %in% names(dates))){
-      next(paste0(file, "does not contain data."))
+      
+      dates$TIMESTAMP <- as_datetime(paste0(dates[, "ano"], "-", dates[, "mês"], "-", dates[, "dia"], " ",  format(as.POSIXct(dates[, "hora"], format = "%H:%M:%S"), "%H:%M:%S")))
+      # next(paste0(file, "does not contain data."))
     }
     
-    if(any(str_detect(names(dates), "VW"))){
+    if(any(str_detect(names(dates), "vw"))){
       label <- "vw"
     } else{
-      if(any(str_detect(names(dates), "SWP"))){
+      if(any(str_detect(names(dates), "swp"))){
         label <- "swp"
       } else{
         warning("Not vw or swp info")
@@ -911,13 +917,13 @@ soilDataIdentificator <- function(folderIn = NULL,
     
     # raw data new name
     if(str_detect(file, "xlsx")){
-    filename <- paste0(label, "_", paste0(dates, collapse = "_"), "_", str_replace(logger.data[, 2], " ", "_"), ".xlsx")
+    filename <- paste0(label, "_", paste0(dates, collapse = "_"), "_", str_replace(logger.data, " ", "_"), ".xlsx")
     } else {
-      filename <- paste0(label, "_", paste0(dates, collapse = "_"), "_", str_replace(logger.data[, 2], " ", "_"), ".dat")
+      filename <- paste0(label, "_", paste0(dates, collapse = "_"), "_", str_replace(logger.data, " ", "_"), ".dat")
     }
     # save raw data in plot folder
     
-    if(str_detect(logger.data[, 2], "A") | str_detect(file, "PA")){
+    if(str_detect(logger.data, "A") | str_detect(file, "PA")){
       
       # Create directory if it does't exist
       dir.create(folderOutA, showWarnings = F)
@@ -925,7 +931,7 @@ soilDataIdentificator <- function(folderIn = NULL,
       file.copy(file, paste0(folderOutA, filename))
       print(paste0(filename, " saved"))
     } else{
-      if(str_detect(logger.data[, 2], "PB") | str_detect(file, "PB") | str_detect(file, "TORRE B")){
+      if(str_detect(logger.data, "PB") | str_detect(file, "PB") | str_detect(file, "TORRE B")){
         # Create directory if it does't exist
         dir.create(folderOutB, showWarnings = F)
         # Copy file into directory to separate plot A and B data
@@ -947,7 +953,8 @@ soilDataIdentificator <- function(folderIn = NULL,
 
 fetchMet <- function(file = NULL,
                      fileOut = NULL,
-                     plot = NULL){
+                     plot = NULL, 
+                     colnames_raw = 2){
   require(readr)
   require(stringr)
   require(dplyr)
@@ -966,11 +973,11 @@ fetchMet <- function(file = NULL,
     
     if(str_detect(file, "xlsx")){
       
-      cnames <- as.character(read_excel(file, col_names = F)[2, ])
+      cnames <- tolower(as.character(read_excel(file, col_names = F)[colnames_raw, ]))
       
       # problem with location of date in meteo data
       if(any(is.na(cnames))){
-        cnames <- as.character(read_excel(file, col_names = F)[2, ])
+        cnames <- as.character(read_excel(file, col_names = F)[colnames_raw, ])
         cnames <- c("day", "month", "year", "hour", cnames[which(cnames != "NA")])
       }
       
@@ -979,16 +986,25 @@ fetchMet <- function(file = NULL,
                  skip = 4,
                  na = "7999", col_names = cnames)
       )
+      names(df) <- tolower(names(df))
       
       if(!any(c("TIMESTAMP", "timestamp") %in% cnames)){
         
-        ## timestamp reconstruction if needed
-        
-        df$hour <- format(as.POSIXct(df$hour), format = "%H:%M:%S")
-        df$TIMESTAMP <- ymd_hms(paste0(df$year, "-", df$month, "-", df$day, " ", df$hour))
-        
-        df <- df %>% 
-          select(TIMESTAMP, everything(), -day, -month, -year, -hour)
+        if(any(c("ano", "dia", "hora", "mês") %in% cnames)){
+          df$timestamp <- as_datetime(paste0(df[, "ano"], "-", df[, "mês"], "-", df[, "dia"], " ",  format(as.POSIXct(df[, "hora"], format = "%H:%M:%S"), "%H:%M:%S")))
+          
+          df <- df %>% 
+            select(timestamp, everything(), -ano, -dia, -hora, -mês)
+          
+        } else{
+          ## timestamp reconstruction if needed
+          
+          df$hour <- format(as.POSIXct(df$hour), format = "%H:%M:%S")
+          df$timestamp <- ymd_hms(paste0(df$year, "-", df$month, "-", df$day, " ", df$hour))
+          
+          df <- df %>% 
+            select(timestamp, everything(), -day, -month, -year, -hour)
+        }
       }
       
     } else{
