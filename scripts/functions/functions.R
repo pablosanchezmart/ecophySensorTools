@@ -591,8 +591,6 @@ fetchEMS81 <- function(folderIn = NULL,
   readEmsXlsx <- function(file){
     ems.df <- as.data.frame(read_excel(file))
     
-    print(file)
-    
     id_species <- str_replace(names(ems.df)[2], 
                               "^\\S* ", "")
     
@@ -827,7 +825,8 @@ dataIdentificator <- function(folderIn = NULL,
 
 soilDataIdentificator <- function(folderIn = NULL,
                               folderOutA = NULL,
-                              folderOutB = NULL){
+                              folderOutB = NULL,
+                              colnames_raw = 1){
   require(readr)
   require(stringr)
   require(dplyr)
@@ -861,7 +860,7 @@ soilDataIdentificator <- function(folderIn = NULL,
     
     if(str_detect(file, "xlsx")){
       
-      cnames <- as.character(read_excel(file, col_names = F)[1, ])
+      cnames <- as.character(read_excel(file, col_names = F)[colnames_raw, ])
       
       # logger.data <- as.data.frame(
       #   read_excel(file, 
@@ -895,7 +894,7 @@ soilDataIdentificator <- function(folderIn = NULL,
     }
 
     
-    if(isFALSE("TIMESTAMP" %in% names(dates))){
+    if(isFALSE("timestamp" %in% names(dates))){
       
       dates$TIMESTAMP <- as_datetime(paste0(dates[, "ano"], "-", dates[, "mês"], "-", dates[, "dia"], " ",  format(as.POSIXct(dates[, "hora"], format = "%H:%M:%S"), "%H:%M:%S")))
       # next(paste0(file, "does not contain data."))
@@ -912,7 +911,7 @@ soilDataIdentificator <- function(folderIn = NULL,
       }
     }
     dates <- dates[c(1, length(dates[, 1])), ] %>%
-      mutate(date = as_date(TIMESTAMP)) %>%
+      mutate(date = as_date(timestamp)) %>%
       pull(date)
     
     # raw data new name

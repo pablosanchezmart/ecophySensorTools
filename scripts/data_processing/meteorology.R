@@ -1119,6 +1119,8 @@ write_csv(daily_clean_meteo_tfe_data,
 
 #### Subdaily data plotting ####
 
+ggplot(vpd_named_met_2023_2024_processed, aes(y = gf_vpd42m_kPa, x = timestamp)) + geom_line()
+
 cleaned_meteo_tfe_data <- as.data.frame(read_csv(paste0("data_processed/met/complete_datasets/processed_met_tfe_", 
                                                             as_date(min(cleaned_meteo_tfe_data$timestamp)), "-", 
                                                             as_date(max(cleaned_meteo_tfe_data$timestamp)), ".csv")))

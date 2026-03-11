@@ -651,7 +651,7 @@ ind.plot
 
 # STEP 1: set the location of the original data to process and the files where we want the output to be stored
 
-raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_stem_water_content/2025-30-04"
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_stem_water_content/2025-04-30"
 raw_file_out <- paste0("data_raw/stem_water_content/raw_stem_water_content_2025_04_30.csv")
 processed_file_out <- paste0("data_processed/stem_water_content/processed_stem_water_content_2025_04_30.csv")
 

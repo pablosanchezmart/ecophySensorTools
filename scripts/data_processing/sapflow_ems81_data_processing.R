@@ -112,7 +112,7 @@ tail(sf_26_06_2023.df)
 write_csv(sf_26_06_2023.df, processed_file_out_26_06_2023)
 
 
-#### COLLECTED 09-28-2023 ------------------------------------------------------ ####
+#### COLLECTED 28-09-2023 ------------------------------------------------------ ####
 
 raw_folder_in_09_28_2023 <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_sapflow/2023_09_28"
 # processed_file_out <- paste0("data_processed/sapflow/processed_saplfow_", Sys.Date(), ".csv")
@@ -501,6 +501,75 @@ tail(sf.df)
 write_csv(sf.df, processed_file_out)
 
 
+#### COLLECTED 2025-07-30 ------------------------------------------------------ ####
+
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_sapflow/2025-07-30"
+# processed_file_out <- paste0("data_processed/sapflow/processed_saplfow_", Sys.Date(), ".csv")
+processed_file_out <- paste0("data_processed/sapflow/processed_sapflow_2025-07-30.csv")
+
+sf.df <- fetchEMS81(folderIn = raw_folder_in,
+                    fileOut = processed_file_out)
+
+sf.df <- sf.df %>%
+  filter(!is.na(ID)) %>%
+  mutate(date = as_date(timestamp)) %>%
+  filter(date > "2022-01-01") %>%
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+
+unique(sf.df$ID)
+length(unique(sf.df$ID))
+head(sf.df)
+tail(sf.df)
+
+write_csv(sf.df, processed_file_out)
+
+
+#### COLLECTED 2025-12-01 ------------------------------------------------------ ####
+
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_sapflow/2025-12-01"
+# processed_file_out <- paste0("data_processed/sapflow/processed_saplfow_", Sys.Date(), ".csv")
+processed_file_out <- paste0("data_processed/sapflow/processed_sapflow_2025-12-01.csv")
+
+sf.df <- fetchEMS81(folderIn = raw_folder_in,
+                    fileOut = processed_file_out)
+
+sf.df <- sf.df %>%
+  filter(!is.na(ID)) %>%
+  mutate(date = as_date(timestamp)) %>%
+  filter(date > "2022-01-01") %>%
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+
+unique(sf.df$ID)
+length(unique(sf.df$ID))
+head(sf.df)
+tail(sf.df)
+
+write_csv(sf.df, processed_file_out)
+
+
+#### COLLECTED 2026-01-23 ------------------------------------------------------ ####
+
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_sapflow/2026-01-23"
+# processed_file_out <- paste0("data_processed/sapflow/processed_saplfow_", Sys.Date(), ".csv")
+processed_file_out <- paste0("data_processed/sapflow/processed_sapflow_2026-01-23.csv")
+
+sf.df <- fetchEMS81(folderIn = raw_folder_in,
+                    fileOut = processed_file_out)
+
+sf.df <- sf.df %>%
+  filter(!is.na(ID)) %>%
+  mutate(date = as_date(timestamp)) %>%
+  filter(date > "2022-01-01") %>%
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+
+unique(sf.df$ID)
+length(unique(sf.df$ID))
+head(sf.df)
+tail(sf.df)
+
+write_csv(sf.df, processed_file_out)
+
+
 #### MERGE DATA TO ENSURE WE HAVE ALL THE TIME SERIES -------------------------- ####
 
 files_path <- list.files("data_processed/sapflow", ".csv", full.names = T)
@@ -557,12 +626,16 @@ tail(clean_sapflow_data)
 ### individual outliers 
 
 clean_sapflow_data$cleaned_bl_sap_flux_Kg_h <- clean_sapflow_data$bl_sap_flux_Kg_h
+clean_sapflow_data$cleaned_increment_mm <- clean_sapflow_data$increment_mm 
+
 all_clean_sapflow_data <- data.frame()
 
 for(id in unique(clean_sapflow_data$ID)){
   
   id_clean_sapflow_data <- clean_sapflow_data %>%
     filter(ID == id)
+  
+  # sapflow
   
   mean_sapflow <- mean(id_clean_sapflow_data$bl_sap_flux_Kg_h, na.rm = T)
   sd_sapflow <- sd(id_clean_sapflow_data$bl_sap_flux_Kg_h, na.rm = T)
@@ -572,6 +645,17 @@ for(id in unique(clean_sapflow_data$ID)){
   
   id_clean_sapflow_data$cleaned_bl_sap_flux_Kg_h[id_clean_sapflow_data$cleaned_bl_sap_flux_Kg_h > upper_threshold] <- NA
   id_clean_sapflow_data$cleaned_bl_sap_flux_Kg_h[id_clean_sapflow_data$cleaned_bl_sap_flux_Kg_h < lower_threshold] <- NA
+  
+  # increment
+  
+  mean_increment <- mean(id_clean_sapflow_data$increment_mm, na.rm = T)
+  sd_increment <- sd(id_clean_sapflow_data$increment_mm, na.rm = T)
+  
+  upper_threshold <- mean_increment + (sd_increment * 3)
+  lower_threshold <- mean_increment - (sd_increment * 3)
+  
+  id_clean_sapflow_data$cleaned_increment_mm[id_clean_sapflow_data$cleaned_increment_mm > upper_threshold] <- NA
+  id_clean_sapflow_data$cleaned_increment_mm[id_clean_sapflow_data$cleaned_increment_mm < lower_threshold] <- NA
   
   all_clean_sapflow_data <- rbind(all_clean_sapflow_data, id_clean_sapflow_data)
 }
@@ -589,7 +673,7 @@ gf_all_clean_sapflow_data <- gapFillTimeSeries(data = all_clean_sapflow_data,
                                                id_vars = c("plot", "species"))
 
 gf_all_clean_sapflow_data <- gapFillTimeSeries(data = gf_all_clean_sapflow_data, 
-                                               variable = "increment_mm",
+                                               variable = "cleaned_increment_mm",
                                                method = "monthly_mean",
                                                id_vars = c("plot", "species"))
 summary(gf_all_clean_sapflow_data)

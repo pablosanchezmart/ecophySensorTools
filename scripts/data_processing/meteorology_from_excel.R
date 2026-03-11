@@ -28,9 +28,9 @@ met_2024_raw <- readxl::read_excel(file.name, sheet = 1)
 
 ### 2025 ####
 
-file.name <- list.files(raw_folder_in, pattern = "Cax_Meteorologico_2025", full.names = T)
+file.name <- list.files(raw_folder_in, pattern = "TORRE_PA_2025", full.names = T)
 met_2025_raw <- readxl::read_excel(file.name, sheet = 1)
-
+View(met_2025_raw)
 # names(met_2025_raw)  %in% names(met_2024_raw)
 
 
@@ -59,9 +59,11 @@ named_met_2023_2024_processed <- data.table::setnames(met_2023_2024_processed,
 vpd_named_met_2023_2024_processed <- named_met_2023_2024_processed %>%
   mutate(vpd2m_kPa = bigleaf::rH.to.VPD(rh2m_perc/100,t2m_C),
        vpd16m_kPa = bigleaf::rH.to.VPD(rh16m_perc/100,t16m_C),
-       vpd28m_kPa = bigleaf::rH.to.VPD(rh16m_perc/100,t28m_C),
+       vpd28m_kPa = bigleaf::rH.to.VPD(rh28m_perc/100,t28m_C),
        vpd42m_kPa = bigleaf::rH.to.VPD(rh42m_perc/100,t42m_C)) %>%
   select(-battv_min, ptemp_c_avg)
+
+ggplot(vpd_named_met_2023_2024_processed, aes(y = vpd42m_kPa, x = timestamp)) + geom_line()
 
 
 ### GAP FILL ####
@@ -78,6 +80,8 @@ for(var in varsToGapfill){
 vpd_named_met_2023_2024_processed$ID <- NULL
 
 names(vpd_named_met_2023_2024_processed)
+
+ggplot(vpd_named_met_2023_2024_processed, aes(y = gf_vpd42m_kPa, x = timestamp)) + geom_line()
 
 
 #### SAVE ---------------------------------------------------------------------- ####
