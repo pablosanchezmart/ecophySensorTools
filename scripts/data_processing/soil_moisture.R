@@ -144,34 +144,6 @@ write_csv(unique_control_soil.df, paste0(processed_folder_out,
                                         min(unique_control_soil.df$date), "-", max(unique_control_soil.df$date), 
                                         "_soil_moisture_control_processed.csv"))
 
-
-### STEP 3: data visualization
-
-control_soil.df <- as.data.frame(read_csv(paste0(processed_folder_out,
-                                                min(unique_control_soil.df$date), "-", max(unique_control_soil.df$date), 
-                                                "_soil_moisture_control_processed.csv")))
-
-for(variable in names(control_soil.df)[c(-1, -2, -3, -4, -5)]){
-  
-  control_soil.df$variable <- control_soil.df[, variable]
-  
-  control.plot <- plotTimeSeries(data = control_soil.df,
-                                 xVar = timestamp,
-                                 yVar = variable,
-                                 xLab = "time", 
-                                 yLab = variable, 
-                                 lineOrPoint = "line")
-  plot(control.plot)
-  
-  # Save the plot
-  pdf(paste0("outputs/data_plots/soil_moisture/control_", variable, "_",
-             min(unique_control_soil.df$date), "-", max(unique_control_soil.df$date),  ".pdf"))
-  plot(control.plot)
-  dev.off()
-  
-  control_soil.df$variable <- NULL
-}
-
 ## repeat for TFE plot
 
 
@@ -381,35 +353,6 @@ tail(unique_control_soil.df)
 write_csv(unique_control_soil.df, paste0(processed_folder_out,
                                          min(unique_control_soil.df$date), "-", max(unique_control_soil.df$date), 
                                          "_soil_moisture_control_processed.csv"))
-
-
-### STEP 3: data visualization
-
-control_soil.df <- as.data.frame(read_csv(paste0(processed_folder_out,
-                                                 min(unique_control_soil.df$date), "-", max(unique_control_soil.df$date), 
-                                                 "_soil_moisture_control_processed.csv")))
-
-for(variable in names(control_soil.df)[c(-1, -2, -3, -4, -5)]){
-  
-  control_soil.df$variable <- control_soil.df[, variable]
-  
-  control.plot <- plotTimeSeries(data = control_soil.df,
-                                 xVar = timestamp,
-                                 yVar = variable,
-                                 xLab = "time", 
-                                 yLab = variable, 
-                                 lineOrPoint = "line")
-  plot(control.plot)
-  
-  # Save the plot
-  pdf(paste0("outputs/data_plots/soil_moisture/control_", variable, ".pdf"))
-  plot(control.plot)
-  dev.off()
-  
-  control_soil.df$variable <- NULL
-}
-
-## repeat for TFE plot
 
 #### TFE ####
 
@@ -1627,6 +1570,7 @@ write_csv(unique_tfe_soil.df_all, paste0(processed_folder_out,
 
 
 #### MERGE DATA TO ENSURE WE HAVE ALL THE TIME SERIES ##########################
+
 ### CONTROL ####
 
 files_path <- list.files("data_processed/soil_moisture", "control", full.names = T)
@@ -1669,17 +1613,17 @@ length(unique(unique_control_data.df$timestamp))
 ## calibrated values (only for latter data? ask if the previous one was already calibrated, looks like it)
 
 old_selected_unique_control_data.df <- unique_control_data.df %>%
-  filter(date < "2022-12-31") %>%
-  select(timestamp, date, vwc_sup_m3_m3, vwc_50cm_m3_m3, vwc_100cm_m3_m3, vwc_250cm_m3_m3, vwc_400cm_m3_m3, cal_vwc_sup_m3_m3 = vwc_sup_m3_m3, cal_vwc_50cm_m3_m3 = vwc_50cm_m3_m3, cal_vwc_100cm_m3_m3 = vwc_100cm_m3_m3, cal_vwc_250cm_m3_m3 = vwc_250cm_m3_m3, cal_vwc_400cm_m3_m3 = vwc_400cm_m3_m3)
+  filter(date < "2022-12-31")  %>%
+  select(timestamp, date, vwc_sup_m3_m3, vwc_50cm_m3_m3, vwc_100cm_m3_m3, vwc_250cm_m3_m3, vwc_400cm_m3_m3)
 
 new_selected_unique_control_data.df <- unique_control_data.df %>%
   filter(date >= "2022-12-31") %>%
-  mutate(cal_vwc_sup_m3_m3 = (vwc_sup_m3_m3 * 1.0229) + 0.0701,
-         cal_vwc_50cm_m3_m3 = (vwc_50cm_m3_m3 * 1.0229) + 0.0701,
-         cal_vwc_100cm_m3_m3 = (vwc_100cm_m3_m3 * 1.0229) + 0.0701,
-         cal_vwc_250cm_m3_m3 = (vwc_250cm_m3_m3 * 1.0229) + 0.0701,
-         cal_vwc_400cm_m3_m3 = (vwc_400cm_m3_m3 * 1.0229) + 0.0701) %>%
-  select(timestamp, date, vwc_sup_m3_m3, vwc_50cm_m3_m3, vwc_100cm_m3_m3, vwc_250cm_m3_m3, vwc_400cm_m3_m3, cal_vwc_sup_m3_m3, cal_vwc_50cm_m3_m3, cal_vwc_100cm_m3_m3, cal_vwc_250cm_m3_m3, cal_vwc_400cm_m3_m3)
+  mutate(vwc_sup_m3_m3 = (vwc_sup_m3_m3 * 1.0229) + 0.0701,
+         vwc_50cm_m3_m3 = (vwc_50cm_m3_m3 * 1.0229) + 0.0701,
+         vwc_100cm_m3_m3 = (vwc_100cm_m3_m3 * 1.0229) + 0.0701,
+         vwc_250cm_m3_m3 = (vwc_250cm_m3_m3 * 1.0229) + 0.0701,
+         vwc_400cm_m3_m3 = (vwc_400cm_m3_m3 * 1.0229) + 0.0701) %>%
+  select(timestamp, date, vwc_sup_m3_m3, vwc_50cm_m3_m3, vwc_100cm_m3_m3, vwc_250cm_m3_m3, vwc_400cm_m3_m3)
 
 selected_unique_control_data.df <- bind_rows(old_selected_unique_control_data.df,
                                                  new_selected_unique_control_data.df)
@@ -1814,16 +1758,16 @@ length(unique(unique_tfe_data.df$timestamp))
 
 old_selected_unique_tfe_data.df <- unique_tfe_data.df %>%
   filter(date < "2022-12-31") %>%
-  select(timestamp, date, vwc_sup_m3_m3, vwc_50cm_m3_m3, vwc_100cm_m3_m3, vwc_250cm_m3_m3, cal_vwc_sup_m3_m3 = vwc_sup_m3_m3, cal_vwc_50cm_m3_m3 = vwc_50cm_m3_m3, cal_vwc_100cm_m3_m3 = vwc_100cm_m3_m3, cal_vwc_250cm_m3_m3 = vwc_250cm_m3_m3, cal_vwc_400cm_m3_m3 = vwc_400cm_m3_m3)
+  select(timestamp, date, vwc_sup_m3_m3, vwc_50cm_m3_m3, vwc_100cm_m3_m3, vwc_250cm_m3_m3)
 
 new_selected_unique_tfe_data.df <- unique_tfe_data.df %>%
   filter(date >= "2022-12-31") %>%
-  mutate(cal_vwc_sup_m3_m3 = (vwc_sup_m3_m3 * 1.0229) + 0.0701,
-         cal_vwc_50cm_m3_m3 = (vwc_50cm_m3_m3 * 1.0229) + 0.0701,
-         cal_vwc_100cm_m3_m3 = (vwc_100cm_m3_m3 * 1.0229) + 0.0701,
-         cal_vwc_250cm_m3_m3 = (vwc_250cm_m3_m3 * 1.0229) + 0.0701,
-         cal_vwc_400cm_m3_m3 = (vwc_400cm_m3_m3 * 1.0229) + 0.0701) %>%
-  select(timestamp, date, vwc_sup_m3_m3, vwc_50cm_m3_m3, vwc_100cm_m3_m3, vwc_250cm_m3_m3, vwc_400cm_m3_m3, cal_vwc_sup_m3_m3, cal_vwc_50cm_m3_m3, cal_vwc_100cm_m3_m3, cal_vwc_250cm_m3_m3, cal_vwc_400cm_m3_m3)
+  mutate(vwc_sup_m3_m3 = (vwc_sup_m3_m3 * 1.0229) + 0.0701,
+         vwc_50cm_m3_m3 = (vwc_50cm_m3_m3 * 1.0229) + 0.0701,
+         vwc_100cm_m3_m3 = (vwc_100cm_m3_m3 * 1.0229) + 0.0701,
+         vwc_250cm_m3_m3 = (vwc_250cm_m3_m3 * 1.0229) + 0.0701,
+         vwc_400cm_m3_m3 = (vwc_400cm_m3_m3 * 1.0229) + 0.0701) %>%
+  select(timestamp, date, vwc_sup_m3_m3, vwc_50cm_m3_m3, vwc_100cm_m3_m3, vwc_250cm_m3_m3, vwc_400cm_m3_m3)
 
 selected_unique_tfe_data.df <- bind_rows(old_selected_unique_tfe_data.df,
                                              new_selected_unique_tfe_data.df)

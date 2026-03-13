@@ -892,11 +892,11 @@ soilDataIdentificator <- function(folderIn = NULL,
                  na = "7999")
       )[-c(1, 2), ]
     }
-
+    names(dates) <- tolower(names(dates))
     
     if(isFALSE("timestamp" %in% names(dates))){
       
-      dates$TIMESTAMP <- as_datetime(paste0(dates[, "ano"], "-", dates[, "mês"], "-", dates[, "dia"], " ",  format(as.POSIXct(dates[, "hora"], format = "%H:%M:%S"), "%H:%M:%S")))
+      dates$timestamp <- as_datetime(paste0(dates[, "ano"], "-", dates[, "mês"], "-", dates[, "dia"], " ",  format(as.POSIXct(dates[, "hora"], format = "%H:%M:%S"), "%H:%M:%S")))
       # next(paste0(file, "does not contain data."))
     }
     
@@ -922,7 +922,7 @@ soilDataIdentificator <- function(folderIn = NULL,
     }
     # save raw data in plot folder
     
-    if(str_detect(logger.data, "A") | str_detect(file, "PA")){
+    if(any(str_detect(logger.data, "A")) | str_detect(file, "PA")){
       
       # Create directory if it does't exist
       dir.create(folderOutA, showWarnings = F)

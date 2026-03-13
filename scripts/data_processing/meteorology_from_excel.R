@@ -30,7 +30,7 @@ met_2024_raw <- readxl::read_excel(file.name, sheet = 1)
 
 file.name <- list.files(raw_folder_in, pattern = "TORRE_PA_2025", full.names = T)
 met_2025_raw <- readxl::read_excel(file.name, sheet = 1)
-View(met_2025_raw)
+
 # names(met_2025_raw)  %in% names(met_2024_raw)
 
 
@@ -43,7 +43,6 @@ met_2023_2024_processed <- bind_rows(met_2023_raw, met_2024_raw, met_2025_raw) %
          timestamp = as_datetime(paste0(date, " ", time))) %>% 
   select(timestamp, date, yday, everything(), -day, -month, -year, -time) %>%
   arrange(timestamp)
-
 
 ### rename and save ####
 
