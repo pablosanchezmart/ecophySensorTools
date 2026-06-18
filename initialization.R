@@ -118,4 +118,6 @@ soil_tfe_variables.names <- readxl::read_excel("C:/Users/psanche2/OneDrive - Uni
 
 ### radar trees metadata ####
 
-metadata <- readxl::read_excel(paste0("C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data_processed/metadata_cax_radar/cax_radar_metadata_caxiuana_10_2023.xlsx"), sheet = 1)
+# metadata <- readxl::read_excel(paste0("C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data_processed/metadata_cax_radar/cax_radar_metadata_caxiuana_10_2023.xlsx"), sheet = 1)
+metadata <- readxl::read_excel(paste0("C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data_processed/metadata_cax_radar/cax_radar_metadata_caxiuana_11_2025.xlsx"), sheet = 1)
+

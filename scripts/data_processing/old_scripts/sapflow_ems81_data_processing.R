@@ -20,7 +20,7 @@ sf_11__21_05_2023.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01", date < "2024-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf_11__21_05_2023.df$ID)
 head(sf_11__21_05_2023.df)
@@ -41,7 +41,7 @@ sf_31_05_2023.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf_31_05_2023.df$ID)
 head(sf_31_05_2023.df)
@@ -62,7 +62,7 @@ sf__28_05_2023.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf__28_05_2023.df$ID)
 head(sf__28_05_2023.df)
@@ -83,7 +83,7 @@ sf_31_05_2023.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf_31_05_2023.df$ID)
 head(sf_31_05_2023.df)
@@ -104,7 +104,7 @@ sf_26_06_2023.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf_26_06_2023.df$ID)
 head(sf_26_06_2023.df)
@@ -125,7 +125,7 @@ sf_09_28_2023.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf_09_28_2023.df$ID)
 head(sf_09_28_2023.df)
@@ -146,7 +146,7 @@ sf_10_17_2023.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf_10_17_2023.df$ID)
 head(sf_10_17_2023.df)
@@ -168,7 +168,7 @@ sf_09_11_2023.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf_09_11_2023.df$ID)
 head(sf_09_11_2023.df)
@@ -190,7 +190,7 @@ sf_14_12_2023.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf_14_12_2023.df$ID)
 head(sf_14_12_2023.df)
@@ -213,7 +213,7 @@ sf_03_15_2024.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf_03_15_2024.df$ID)
 length(unique(sf_03_15_2024.df$ID))
@@ -236,7 +236,7 @@ sf_30_05_2024.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf_30_05_2024.df$ID)
 length(unique(sf_30_05_2024.df$ID))
@@ -259,7 +259,7 @@ sf_26_07_2024.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf_26_07_2024.df$ID)
 length(unique(sf_26_07_2024.df$ID))
@@ -282,7 +282,7 @@ sf_2024_09_10.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf_2024_09_10.df$ID)
 length(unique(sf_2024_09_10.df$ID))
@@ -305,7 +305,7 @@ sf_2024_09_25.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf_2024_09_25.df$ID)
 length(unique(sf_2024_09_25.df$ID))
@@ -328,7 +328,7 @@ sf_2024_11_14.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf_2024_11_14.df$ID)
 length(unique(sf_2024_11_14.df$ID))
@@ -351,7 +351,7 @@ sf_2024_11_15.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf_2024_11_15.df$ID)
 length(unique(sf_2024_11_15.df$ID))
@@ -374,7 +374,7 @@ sf.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf.df$ID)
 length(unique(sf.df$ID))
@@ -397,7 +397,7 @@ sf.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf.df$ID)
 length(unique(sf.df$ID))
@@ -420,7 +420,7 @@ sf.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf.df$ID)
 length(unique(sf.df$ID))
@@ -445,7 +445,7 @@ sf.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf.df$ID)
 length(unique(sf.df$ID))
@@ -468,7 +468,7 @@ sf.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf.df$ID)
 length(unique(sf.df$ID))
@@ -491,7 +491,7 @@ sf.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf.df$ID)
 length(unique(sf.df$ID))
@@ -514,7 +514,7 @@ sf.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf.df$ID)
 length(unique(sf.df$ID))
@@ -537,7 +537,7 @@ sf.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf.df$ID)
 length(unique(sf.df$ID))
@@ -560,30 +560,7 @@ sf.df <- sf.df %>%
   filter(!is.na(ID)) %>%
   mutate(date = as_date(timestamp)) %>%
   filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
-
-unique(sf.df$ID)
-length(unique(sf.df$ID))
-head(sf.df)
-tail(sf.df)
-
-write_csv(sf.df, processed_file_out)
-
-
-#### COLLECTED 2026-05-29 ------------------------------------------------------ ####
-
-raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_sapflow/2026-05-29"
-# processed_file_out <- paste0("data_processed/sapflow/processed_saplfow_", Sys.Date(), ".csv")
-processed_file_out <- paste0("data_processed/sapflow/processed_sapflow_2026-05-29.csv")
-
-sf.df <- fetchEMS81(folderIn = raw_folder_in,
-                    fileOut = processed_file_out)
-
-sf.df <- sf.df %>%
-  filter(!is.na(ID)) %>%
-  mutate(date = as_date(timestamp)) %>%
-  filter(date > "2022-01-01") %>%
-  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 unique(sf.df$ID)
 length(unique(sf.df$ID))
@@ -617,13 +594,10 @@ for(i in 2:length(files_path)){
   names(data)
 }
 
-
-data <- merge(data, metadata[, c("ID", "species")], by = "ID", all.x = T)
-
 sapflow_data <- data %>%
+  filter(!ID %in% c("Control_NA", "Control_Licania", "Control_Protium")) %>%   # Individuals with problems that needs to be double check, removed for now
   mutate(timestamp = as_datetime(str_split_fixed(timestamp_ID, "_", n = 3)[, 1])) %>%
-  select(timestamp, ID, plot, species, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm) %>% 
-  arrange(ID, timestamp)
+  select(timestamp, ID, species, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
 
 str(sapflow_data)
 unique(sapflow_data$ID)
@@ -635,23 +609,12 @@ tail(sapflow_data)
 
 ### id with problems 
 
-id_to_remove <- c("Control_363", # dead, bad data
-                  "TFE_80", # dead 
-                 "TFE_214.1", # too small to get data
-                 "TFE_218", # tree don't exist, mistake initialization?
-                 "TFE_204", # tree don't exist, mistake initialization?
-                 "Control_266" # tree don't exist, mistake initialization?
-                 )
+# id_problems <- c("Control_252")
 # id_parcially_bad <- c("Control_357", "Control_359", "TFE_204", "TFE_211", "TFE_213", "TFE_266")
-# id_to_remove <- c(id_problems, id_parcially_bad) 
+# id_to_remove <- c(id_problems, id_parcially_bad)
 
-sapflow_data %>% 
-  filter(ID %in% id_to_remove) %>% 
-  pull(ID) %>% 
-  unique()
-
-clean_sapflow_data <- sapflow_data %>% 
-  filter(!ID %in% id_to_remove)
+clean_sapflow_data <- sapflow_data
+  # filter(!ID %in% id_to_remove)
 
 ### negative values cleaning
 
@@ -769,7 +732,7 @@ tail(daily_clean_sapflow_data)
 
 ### hourly data ####
 tail(gf_clean_sapflow_data_metadata)
-names(gf_clean_sapflow_data_metadata)
+
 ## to project directory
 
 write_csv(gf_clean_sapflow_data_metadata, 
@@ -806,18 +769,16 @@ write_csv(daily_clean_sapflow_data,
 )
 
 
-#### MANUAL CHECKS ------------------------------------------------------------- ####
-
-# gf_clean_sapflow_data_metadata <- read_csv( paste0(root.dir, "data_processed/caxuana_sapflow/cleaned_processed_sapflow_2022-11-17-2026-05-26.csv"))
-
-# test <- gf_clean_sapflow_data_metadata %>% filter(ID == "Control_266") %>% filter(!is.na(sap_flux_kg_h))
-# tail(test)
-
 #### HOURLY DATA PLOTTING ------------------------------------------------------ ####
 
-for(ind in unique(gf_clean_sapflow_data_metadata$ID)){
+gf_clean_sapflow_data_metadata <- read_csv( paste0(root.dir, "data_processed/caxuana_sapflow/cleaned_processed_sapflow_", 
+                                                   as_date(min(gf_clean_sapflow_data_metadata$timestamp)), "-", 
+                                                   as_date(max(gf_clean_sapflow_data_metadata$timestamp)), ".csv"))
 
-  # ind <- "TFE_211"
+
+for(ind in unique(gf_clean_sapflow_data_metadata$ID)){
+  
+  # ind <- "TFE_270"
   
   ind_data <- gf_clean_sapflow_data_metadata %>%
     filter(ID == ind) %>% 

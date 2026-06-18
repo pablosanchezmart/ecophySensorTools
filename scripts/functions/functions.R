@@ -599,9 +599,11 @@ fetchEMS81 <- function(folderIn = NULL,
     numCol <- length(names(ems.df))
     
     timestamp <- ems.df[, 1]
-    species <- paste0(id[3], " ", id[4])
-    plot <- ifelse(id[1] == "TFE", "TFE", "Control")
-    id <- paste0(plot, "_", id[2])
+    # species <- paste0(id[3], " ", id[4])
+    # plot <- ifelse(id[1] == "TFE", "TFE", "Control")
+    plot <- ifelse(any(str_detect(id, "TFE")), "TFE", "Control")
+    tree_number <- parse_number(paste(id, collapse = " "))
+    id <- paste0(plot, "_", tree_number)
     
     sapflow <- rep(NA, length(timestamp))
     increment <- rep(NA, length(timestamp))
@@ -633,7 +635,7 @@ fetchEMS81 <- function(folderIn = NULL,
     
     clean_ems.df <- data.frame("timestamp" = timestamp, 
                                "ID" = id,
-                               "species" = species,
+                               # "species" = species,
                                "plot" = plot,
                           "sap_flux_kg_h" = sapflow, 
                           "increment_mm" = increment, 

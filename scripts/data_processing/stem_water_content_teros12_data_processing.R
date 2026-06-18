@@ -49,6 +49,38 @@ tail(processed.list$processed_data)
 
 summary(processed.list$processed_data)
 
+for(ind in unique(processed.list$processed_data$ID)){
+  
+  # ind <- "TFE_270"
+  
+  ind_data <- processed.list$processed_data %>%
+    filter(ID == ind) %>% 
+    mutate(date = as_date(timestamp))
+  # filter(date == "2023-11-12")
+  
+  # sap flow
+  ind.plot <- plotTimeSeries(data = ind_data,
+                             xVar = timestamp,
+                             yVar = calibrated_water_content_m3.m3,
+                             xLab = "", 
+                             yLab = "calibrated water content", 
+                             lineOrPoint = "line", 
+                             colorVar = ID)
+  
+  # gap filled baselined sap flow
+  bl_ind.plot <- plotTimeSeries(data = ind_data,
+                                xVar = timestamp,
+                                yVar = water_content_m3.m3,
+                                xLab = "", 
+                                yLab = "water content", 
+                                lineOrPoint = "line", 
+                                colorVar = ID)
+  
+  p <- ggarrange(ind.plot, bl_ind.plot, nrow = 2, ncol = 1)
+  plot(p)
+}
+
+
 #### COLLECTED 26-06-2023 (feb 2023-jun 2023) ---------------------------------- ####
 
 # STEP 1: set the location of the original data to process and the files where we want the output to be stored
@@ -87,7 +119,36 @@ processed.list <- processTeros12(rawDataFile = raw_file_out,
                                  fileOut = processed_file_out)
 
 # here we can see how it looks
-tail(processed.list$processed_data)
+head(processed.list$processed_data)
+
+for(ind in unique(processed.list$processed_data$ID)){
+  
+  ind_data <- processed.list$processed_data %>%
+    filter(ID == ind) %>% 
+    mutate(date = as_date(timestamp))
+  # filter(date == "2023-11-12")
+  
+  # sap flow
+  ind.plot <- plotTimeSeries(data = ind_data,
+                             xVar = timestamp,
+                             yVar = calibrated_water_content_m3.m3,
+                             xLab = "", 
+                             yLab = "calibrated water content", 
+                             lineOrPoint = "line", 
+                             colorVar = ID)
+  
+  # gap filled baselined sap flow
+  bl_ind.plot <- plotTimeSeries(data = ind_data,
+                                xVar = timestamp,
+                                yVar = water_content_m3.m3,
+                                xLab = "", 
+                                yLab = "water content", 
+                                lineOrPoint = "line", 
+                                colorVar = ID)
+  
+  p <- ggarrange(ind.plot, bl_ind.plot, nrow = 2, ncol = 1)
+  plot(p)
+}
 
 #### COLLECTED 29-09-2023 (jan 2023-Sept 2023) --------------------------------- ####
 
@@ -877,6 +938,228 @@ ind.plot <- plotTimeSeries(data = ind_data,
 ind.plot
 
 
+#### COLLECTED 2025-11-25 ------------------------------------------------------ ####
+
+# STEP 1: set the location of the original data to process and the files where we want the output to be stored
+
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_stem_water_content/2025-11-25"
+raw_file_out <- paste0("data_raw/stem_water_content/raw_stem_water_content_2025_11_25.csv")
+processed_file_out <- paste0("data_processed/stem_water_content/processed_stem_water_content_2025_11_25.csv")
+
+# STEP 2: apply the functions to fetch the original data and process it
+
+raw.df <- fetchTeros12(folderIn = raw_folder_in,
+                       fileOut = raw_file_out) %>%
+  arrange(timestamp)
+
+unique(raw.df$label)
+
+# a <- raw.df %>%
+# filter(label == "z6-20609_Port_2")
+
+# we need to translate from label to tree id, to do so we will use the following object: labelToID.data, which comes from the metadata where we have the
+# relationship between loggers and tree ID
+
+labelToID.data <- readxl::read_excel(paste0(root.dir, "data_processed/metadata_cax_radar/cax_radar_metadata_caxiuana_11_2025.xlsx"),
+                                     sheet = "2025_11_metadata") %>%
+  # filter(!is.na(teros12_logger)) %>%
+  # mutate(label = paste0(teros12_logger, "_", teros12_port)) %>%
+  select(ID, plot, species, size_class, contains("teros12_logger"), teros12_port)
+
+# adjust the code to the fact that we had to replace some loggers
+logger_names <- names(labelToID.data)[str_detect(names(labelToID.data), "teros12_logger")]
+
+labelToID.data_newLoggers <- data.frame()
+for(logger_name in logger_names){
+  
+  labelToID.data_newLogger <- labelToID.data[!is.na(labelToID.data[, logger_name]), ] %>%
+    select(ID, plot, species, size_class, all_of(logger_name), teros12_port)
+  
+  names(labelToID.data_newLogger)[names(labelToID.data_newLogger) == logger_name] <- "teros12_logger"
+  
+  labelToID.data_newLoggers <- rbind(labelToID.data_newLoggers, labelToID.data_newLogger)
+}
+
+labelToID.data_newLoggers <- labelToID.data_newLoggers %>%
+  mutate(label = paste0(teros12_logger, "_", teros12_port)) %>%
+  select(ID, plot, species, size_class, label)
+
+## process data
+# unique(raw.df$label)
+processed.list <- processTeros12(rawDataFile = raw_file_out,
+                                 rawData = NULL,
+                                 labelToIDFile = NULL,
+                                 labelToID = labelToID.data_newLoggers,
+                                 fileOut = processed_file_out)
+# View(labelToID.data_newLoggers)
+
+ind <- "Control_264"
+
+ind_data <- processed.list$processed_data %>%
+  filter(ID == ind) %>%
+  mutate(date = as_date(timestamp)) %>%
+  filter(date > "2023-01-01") %>%
+  arrange(timestamp)
+tail(ind_data)
+
+# raw water content
+ind.plot <- plotTimeSeries(data = ind_data,
+                           xVar = timestamp,
+                           yVar = water_content_m3.m3,
+                           xLab = "",
+                           yLab = "stem wc (m3/m3)",
+                           lineOrPoint = "line",
+                           colorVar = ID) +
+  scale_x_datetime(date_breaks = "1 month", date_labels = "%b")
+ind.plot
+
+
+#### COLLECTED 2026-03-24 ------------------------------------------------------ ####
+
+# STEP 1: set the location of the original data to process and the files where we want the output to be stored
+
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_stem_water_content/2026-03-24"
+raw_file_out <- paste0("data_raw/stem_water_content/raw_stem_water_content_2026_03_24.csv")
+processed_file_out <- paste0("data_processed/stem_water_content/processed_stem_water_content_2026_03_24.csv")
+
+# STEP 2: apply the functions to fetch the original data and process it
+
+raw.df <- fetchTeros12(folderIn = raw_folder_in,
+                       fileOut = raw_file_out) %>%
+  arrange(timestamp)
+
+unique(raw.df$label)
+
+# we need to translate from label to tree id, to do so we will use the following object: labelToID.data, which comes from the metadata where we have the
+# relationship between loggers and tree ID
+
+labelToID.data <- readxl::read_excel(paste0(root.dir, "data_processed/metadata_cax_radar/cax_radar_metadata_caxiuana_11_2025.xlsx"),
+                                     sheet = "2025_11_metadata") %>%
+  # filter(!is.na(teros12_logger)) %>%
+  # mutate(label = paste0(teros12_logger, "_", teros12_port)) %>%
+  select(ID, plot, species, size_class, contains("teros12_logger"), teros12_port)
+
+# adjust the code to the fact that we had to replace some loggers
+logger_names <- names(labelToID.data)[str_detect(names(labelToID.data), "teros12_logger")]
+
+labelToID.data_newLoggers <- data.frame()
+for(logger_name in logger_names){
+  
+  labelToID.data_newLogger <- labelToID.data[!is.na(labelToID.data[, logger_name]), ] %>%
+    select(ID, plot, species, size_class, all_of(logger_name), teros12_port)
+  
+  names(labelToID.data_newLogger)[names(labelToID.data_newLogger) == logger_name] <- "teros12_logger"
+  
+  labelToID.data_newLoggers <- rbind(labelToID.data_newLoggers, labelToID.data_newLogger)
+}
+
+labelToID.data_newLoggers <- labelToID.data_newLoggers %>%
+  mutate(label = paste0(teros12_logger, "_", teros12_port)) %>%
+  select(ID, plot, species, size_class, label)
+
+## process data
+# unique(raw.df$label)
+processed.list <- processTeros12(rawDataFile = raw_file_out,
+                                 rawData = NULL,
+                                 labelToIDFile = NULL,
+                                 labelToID = labelToID.data_newLoggers,
+                                 fileOut = processed_file_out)
+# View(labelToID.data_newLoggers)
+
+ind <- "Control_264"
+
+ind_data <- processed.list$processed_data %>%
+  filter(ID == ind) %>%
+  mutate(date = as_date(timestamp)) %>%
+  filter(date > "2023-01-01") %>%
+  arrange(timestamp)
+tail(ind_data)
+
+# raw water content
+ind.plot <- plotTimeSeries(data = ind_data,
+                           xVar = timestamp,
+                           yVar = water_content_m3.m3,
+                           xLab = "",
+                           yLab = "stem wc (m3/m3)",
+                           lineOrPoint = "line",
+                           colorVar = ID) +
+  scale_x_datetime(date_breaks = "1 month", date_labels = "%b")
+ind.plot
+
+
+#### COLLECTED 2026-05-25 ------------------------------------------------------ ####
+
+# STEP 1: set the location of the original data to process and the files where we want the output to be stored
+
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_stem_water_content/2026-05-25"
+raw_file_out <- paste0("data_raw/stem_water_content/raw_stem_water_content_2026_05_25.csv")
+processed_file_out <- paste0("data_processed/stem_water_content/processed_stem_water_content_2026_05_25.csv")
+
+# STEP 2: apply the functions to fetch the original data and process it
+
+raw.df <- fetchTeros12(folderIn = raw_folder_in,
+                       fileOut = raw_file_out) %>%
+  arrange(timestamp)
+
+unique(raw.df$label)
+
+# we need to translate from label to tree id, to do so we will use the following object: labelToID.data, which comes from the metadata where we have the
+# relationship between loggers and tree ID
+
+labelToID.data <- readxl::read_excel(paste0(root.dir, "data_processed/metadata_cax_radar/cax_radar_metadata_caxiuana_11_2025.xlsx"),
+                                     sheet = "2025_11_metadata") %>%
+  # filter(!is.na(teros12_logger)) %>%
+  # mutate(label = paste0(teros12_logger, "_", teros12_port)) %>%
+  select(ID, plot, species, size_class, contains("teros12_logger"), teros12_port)
+
+# adjust the code to the fact that we had to replace some loggers
+logger_names <- names(labelToID.data)[str_detect(names(labelToID.data), "teros12_logger")]
+
+labelToID.data_newLoggers <- data.frame()
+for(logger_name in logger_names){
+  
+  labelToID.data_newLogger <- labelToID.data[!is.na(labelToID.data[, logger_name]), ] %>%
+    select(ID, plot, species, size_class, all_of(logger_name), teros12_port)
+  
+  names(labelToID.data_newLogger)[names(labelToID.data_newLogger) == logger_name] <- "teros12_logger"
+  
+  labelToID.data_newLoggers <- rbind(labelToID.data_newLoggers, labelToID.data_newLogger)
+}
+
+labelToID.data_newLoggers <- labelToID.data_newLoggers %>%
+  mutate(label = paste0(teros12_logger, "_", teros12_port)) %>%
+  select(ID, plot, species, size_class, label)
+
+## process data
+# unique(raw.df$label)
+processed.list <- processTeros12(rawDataFile = raw_file_out,
+                                 rawData = NULL,
+                                 labelToIDFile = NULL,
+                                 labelToID = labelToID.data_newLoggers,
+                                 fileOut = processed_file_out)
+# View(labelToID.data_newLoggers)
+
+ind <- "Control_264"
+
+ind_data <- processed.list$processed_data %>%
+  filter(ID == ind) %>%
+  mutate(date = as_date(timestamp)) %>%
+  filter(date > "2023-01-01") %>%
+  arrange(timestamp)
+tail(ind_data)
+
+# raw water content
+ind.plot <- plotTimeSeries(data = ind_data,
+                           xVar = timestamp,
+                           yVar = water_content_m3.m3,
+                           xLab = "",
+                           yLab = "stem wc (m3/m3)",
+                           lineOrPoint = "line",
+                           colorVar = ID) +
+  scale_x_datetime(date_breaks = "1 month", date_labels = "%b")
+ind.plot
+
+
 #### MERGE DATA TO ENSURE WE HAVE ALL THE TIME SERIES -------------------------- ####
 
 files_path <- list.files("data_processed/stem_water_content", ".csv", full.names = T)
@@ -922,7 +1205,7 @@ stem_wc_data <- data %>%
          raw_voltage = (water_content_m3.m3 + 0.6956) / (3.879 * 10^-4),
          dielectric_permittivity = (2.887 * 10^-9 * raw_voltage^3 - 2.080 * 10^-5 * raw_voltage^2 + 5.276 * 10^-2 * raw_voltage -43.39)^2) %>%
   filter(date > "2023-05-01") %>%
-  filter(date < "2026-01-01") %>%
+  filter(date < "2027-01-01") %>%
   rename(stem_temperature_C = soil_temperature_C) %>%
   arrange(ID, timestamp) %>%
   as.data.frame()
@@ -1194,7 +1477,7 @@ for(ind in unique(gf_all_stem_wc_data$ID)){
                              yLab = "dielectric permittivity", 
                              lineOrPoint = "line", 
                              colorVar = ID) + 
-    scale_x_datetime(date_breaks = "1 month", date_labels = "%b")
+    scale_x_datetime(date_breaks = "12 month")
   
   # raw water content
   ind.plot <- plotTimeSeries(data = ind_data,
@@ -1204,7 +1487,7 @@ for(ind in unique(gf_all_stem_wc_data$ID)){
                              yLab = "stem wc (m3/m3)", 
                              lineOrPoint = "line", 
                              colorVar = ID) + 
-    scale_x_datetime(date_breaks = "1 month", date_labels = "%b")
+    scale_x_datetime(date_breaks = "12 month")
   
   # gap filled and calibrated water content
   gf_ind.plot <- plotTimeSeries(data = ind_data,
@@ -1214,7 +1497,7 @@ for(ind in unique(gf_all_stem_wc_data$ID)){
                                 yLab = "gf cl stem wc (m3/m3)", 
                                 lineOrPoint = "line", 
                                 colorVar = ID) + 
-    scale_x_datetime(date_breaks = "1 month", date_labels = "%b")
+    scale_x_datetime(date_breaks = "12 month")
   
   # temperature corrected gap filled and calibrated water content
   tc_ind.plot <- plotTimeSeries(data = ind_data,
@@ -1224,7 +1507,7 @@ for(ind in unique(gf_all_stem_wc_data$ID)){
                                 yLab = "tc gf cl stem wc (m3/m3)", 
                                 lineOrPoint = "line", 
                                 colorVar = ID) + 
-    scale_x_datetime(date_breaks = "1 month", date_labels = "%b")
+    scale_x_datetime(date_breaks = "12 month")
   
   # Save the plot
   pdf(paste0("outputs/data_plots/stem_water_content/hourly/stem_wc_", ind, "_", str_replace(unique(ind_data$species), " ", "_"),".pdf"))
