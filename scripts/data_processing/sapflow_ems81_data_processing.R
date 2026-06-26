@@ -593,6 +593,29 @@ tail(sf.df)
 write_csv(sf.df, processed_file_out)
 
 
+#### COLLECTED 2026-06-25 ------------------------------------------------------ ####
+
+raw_folder_in <- "C:/Users/psanche2/OneDrive - University of Edinburgh/postdoc_UoE/data/caxuana_physiology/caxuana_sapflow/2026-06-24"
+# processed_file_out <- paste0("data_processed/sapflow/processed_saplfow_", Sys.Date(), ".csv")
+processed_file_out <- paste0("data_processed/sapflow/processed_sapflow_2026-06-24.csv")
+
+sf.df <- fetchEMS81(folderIn = raw_folder_in,
+                    fileOut = processed_file_out)
+
+sf.df <- sf.df %>%
+  filter(!is.na(ID)) %>%
+  mutate(date = as_date(timestamp)) %>%
+  filter(date > "2022-01-01") %>%
+  select(timestamp, ID, plot, sap_flux_kg_h, bl_sap_flux_Kg_h, increment_mm)
+
+unique(sf.df$ID)
+length(unique(sf.df$ID))
+head(sf.df)
+tail(sf.df)
+
+write_csv(sf.df, processed_file_out)
+
+
 #### MERGE DATA TO ENSURE WE HAVE ALL THE TIME SERIES -------------------------- ####
 
 files_path <- list.files("data_processed/sapflow", ".csv", full.names = T)

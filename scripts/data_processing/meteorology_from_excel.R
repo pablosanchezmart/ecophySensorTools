@@ -3,6 +3,9 @@
 ## Pablo Sanchez Martinez
 ## 05/2023
 
+## dta before 2008 quite different format, someone should make sense of it before using (or go to raw data)
+
+
 source("initialization.R")
 source("scripts/functions/functions.R")
 
@@ -15,28 +18,34 @@ processed_folder_out <- paste0("data_processed/met/from_excel/")
 
 ### 2023 ####
 
-file.name <- list.files(raw_folder_in, pattern = "2023", full.names = T)
-met_2023_raw <- readxl::read_excel(file.name, sheet = 1)
+met_2023_raw <- readxl::read_excel(list.files(raw_folder_in, pattern = "2023", full.names = T), sheet = 1)
+str(met_2023_raw)
 
 ### 2024 ####
 
-file.name <- list.files(raw_folder_in, pattern = "2024", full.names = T)
-met_2024_raw <- readxl::read_excel(file.name, sheet = 1)
-
-# names(met_2024_raw)  %in% names(met_2024_raw)
+met_2024_raw <- readxl::read_excel(list.files(raw_folder_in, pattern = "2024", full.names = T), sheet = 1)
+str(met_2024_raw)
+all(names(met_2023_raw)  %in% names(met_2024_raw))
 
 
 ### 2025 ####
 
-file.name <- list.files(raw_folder_in, pattern = "TORRE_PA_2025", full.names = T)
-met_2025_raw <- readxl::read_excel(file.name, sheet = 1)
+met_2025_raw <- readxl::read_excel(list.files(raw_folder_in, pattern = "TORRE_PA_2025", full.names = T), sheet = 1)
+str(met_2025_raw)
+all(names(met_2023_raw)  %in% names(met_2025_raw))
 
-# names(met_2025_raw)  %in% names(met_2024_raw)
+
+### 2026 ####
+
+met_2026_raw <- readxl::read_excel(list.files(raw_folder_in, pattern = "TORRE_PA_2026", full.names = T), sheet = 1) %>% 
+  mutate(NR_Wm2_Avg = as.numeric(NR_Wm2_Avg))
+str(met_2026_raw)
+all(names(met_2023_raw)  %in% names(met_2026_raw))
 
 
 ### combine and clean ####
 
-met_2023_2024_processed <- bind_rows(met_2023_raw, met_2024_raw, met_2025_raw) %>%
+met_2023_2026_processed <- bind_rows(met_2023_raw, met_2024_raw, met_2025_raw, met_2026_raw) %>%
   rename("year" = "Ano", day = "Dia", month = "Mês", "time" = "Hora", yday = "Dias Juliano")  %>%
   mutate(time = as_hms(time),
          date = as_date(make_datetime(year, month, day)),
@@ -46,55 +55,55 @@ met_2023_2024_processed <- bind_rows(met_2023_raw, met_2024_raw, met_2025_raw) %
 
 ### rename and save ####
 
-names(met_2023_2024_processed) <- tolower(names(met_2023_2024_processed))
+names(met_2023_2026_processed) <- tolower(names(met_2023_2026_processed))
 
 raw_processed_names <- met_variables.names %>%
-  filter(abbreviation_raw %in% names(met_2023_2024_processed))
+  filter(abbreviation_raw %in% names(met_2023_2026_processed))
 
-named_met_2023_2024_processed <- data.table::setnames(met_2023_2024_processed, 
+named_met_2023_2026_processed <- data.table::setnames(met_2023_2026_processed, 
                                                       old = raw_processed_names$abbreviation_raw, 
                                                       new = raw_processed_names$abbreviation_processed)
 
-vpd_named_met_2023_2024_processed <- named_met_2023_2024_processed %>%
+vpd_named_met_2023_2026_processed <- named_met_2023_2026_processed %>%
   mutate(vpd2m_kPa = bigleaf::rH.to.VPD(rh2m_perc/100,t2m_C),
        vpd16m_kPa = bigleaf::rH.to.VPD(rh16m_perc/100,t16m_C),
        vpd28m_kPa = bigleaf::rH.to.VPD(rh28m_perc/100,t28m_C),
        vpd42m_kPa = bigleaf::rH.to.VPD(rh42m_perc/100,t42m_C)) %>%
   select(-battv_min, ptemp_c_avg)
 
-ggplot(vpd_named_met_2023_2024_processed, aes(y = vpd42m_kPa, x = timestamp)) + geom_line()
+ggplot(vpd_named_met_2023_2026_processed, aes(y = vpd42m_kPa, x = timestamp)) + geom_line()
 
 
 ### GAP FILL ####
 
-varsToGapfill <- names(vpd_named_met_2023_2024_processed)[!names(vpd_named_met_2023_2024_processed) %in% c("timestamp", "date", "yday", "precip_mm")]
+varsToGapfill <- names(vpd_named_met_2023_2026_processed)[!names(vpd_named_met_2023_2026_processed) %in% c("timestamp", "date", "yday", "precip_mm")]
 
-vpd_named_met_2023_2024_processed$ID <- "Control"
+vpd_named_met_2023_2026_processed$ID <- "Control"
 
 for(var in varsToGapfill){
-  vpd_named_met_2023_2024_processed <- gapFillTimeSeries(data = vpd_named_met_2023_2024_processed, 
+  vpd_named_met_2023_2026_processed <- gapFillTimeSeries(data = vpd_named_met_2023_2026_processed, 
                                                  variable = var)
 }
 
-vpd_named_met_2023_2024_processed$ID <- NULL
+vpd_named_met_2023_2026_processed$ID <- NULL
 
-names(vpd_named_met_2023_2024_processed)
+names(vpd_named_met_2023_2026_processed)
 
-ggplot(vpd_named_met_2023_2024_processed, aes(y = gf_vpd42m_kPa, x = timestamp)) + geom_line()
+ggplot(vpd_named_met_2023_2026_processed, aes(y = gf_vpd42m_kPa, x = timestamp)) + geom_line()
 
 
 #### SAVE ---------------------------------------------------------------------- ####
 
-tail(vpd_named_met_2023_2024_processed)
-write_csv(vpd_named_met_2023_2024_processed, paste0(processed_folder_out,
-                                          min(as_date(vpd_named_met_2023_2024_processed$date), na.rm = T), "-", 
-                                          max(as_date(vpd_named_met_2023_2024_processed$date), na.rm = T),
+tail(vpd_named_met_2023_2026_processed)
+write_csv(vpd_named_met_2023_2026_processed, paste0(processed_folder_out,
+                                          min(as_date(vpd_named_met_2023_2026_processed$date), na.rm = T), "-", 
+                                          max(as_date(vpd_named_met_2023_2026_processed$date), na.rm = T),
                                           "_met_control_processed.csv"))
 
 # to general
-write_csv(vpd_named_met_2023_2024_processed, paste0(root.dir, "data_processed/met/",
-                                                    min(as_date(vpd_named_met_2023_2024_processed$date), na.rm = T), "-", 
-                                                    max(as_date(vpd_named_met_2023_2024_processed$date), na.rm = T),
+write_csv(vpd_named_met_2023_2026_processed, paste0(root.dir, "data_processed/met/",
+                                                    min(as_date(vpd_named_met_2023_2026_processed$date), na.rm = T), "-", 
+                                                    max(as_date(vpd_named_met_2023_2026_processed$date), na.rm = T),
                                                     "_met_control_processed.csv"))
 
 
@@ -106,38 +115,47 @@ processed_folder_out <- paste0("data_processed/met/from_excel/")
 
 ### 2023 ####
 
-file.name <- list.files(raw_folder_in, pattern = "2023", full.names = T)
-met_2023_raw <- readxl::read_excel(file.name, sheet = 1) %>% 
+met_2023_raw <- readxl::read_excel(list.files(raw_folder_in, pattern = "2023", full.names = T), sheet = 1) %>% 
   mutate(
     Hora = ymd_hms(Hora),
     Hora = as.character(hms(hour(Hora), minute(Hora), second(Hora)))
   ) %>% 
   mutate(across(6:19, ~as.numeric(as.character(.))))
-
+str(met_2023_raw)
 
 ### 2024 ####
 
-file.name <- list.files(raw_folder_in, pattern = "2024", full.names = T)
-met_2024_raw <- readxl::read_excel(file.name, sheet = 1) %>%
+met_2024_raw <- readxl::read_excel(list.files(raw_folder_in, pattern = "2024", full.names = T), sheet = 1) %>%
   mutate(
     Hora = format(as.POSIXct(unlist(str_split(as.character(Hora),  " "))[2], format = "%H:%M:%S"), "%H:%M:%S")
   ) %>% 
   mutate(across(6:19, ~as.numeric(as.character(.))))
-met_2024_raw
+str(met_2024_raw)
+
 
 ### 2025 ####
 
-file.name <- list.files(raw_folder_in, pattern = "2025", full.names = T)
-met_2025_raw <- readxl::read_excel(file.name, sheet = 1) %>% 
+met_2025_raw <- readxl::read_excel(list.files(raw_folder_in, pattern = "2025", full.names = T), sheet = 1) %>% 
   mutate(
     Hora = ymd_hms(Hora),
     Hora = as.character(hms(hour(Hora), minute(Hora), second(Hora)))
          )%>% 
   mutate(across(6:19, ~as.numeric(as.character(.))))
+str(met_2025_raw)
+
+### 2026 ####
+
+met_2026_raw <- readxl::read_excel(list.files(raw_folder_in, pattern = "2026", full.names = T), sheet = 1) %>% 
+  mutate(
+    Hora = ymd_hms(Hora),
+    Hora = as.character(hms(hour(Hora), minute(Hora), second(Hora)))
+  )%>% 
+  mutate(across(6:19, ~as.numeric(as.character(.))))
+str(met_2026_raw)
 
 ### combine and clean ####
 
-met_2023_2024_processed <- bind_rows(met_2023_raw, met_2024_raw, met_2025_raw) %>%
+met_2023_2026_processed <- bind_rows(met_2023_raw, met_2024_raw, met_2025_raw, met_2026_raw) %>%
   rename("year" = "Ano", day = "Dia", month = "Mês", "time" = "Hora", yday = "Dias Juliano")  %>%
   mutate(time = as_hms(time),
          date = as_date(make_datetime(year, month, day)),
@@ -147,16 +165,16 @@ met_2023_2024_processed <- bind_rows(met_2023_raw, met_2024_raw, met_2025_raw) %
 
 ### rename ####
 
-names(met_2023_2024_processed) <- tolower(names(met_2023_2024_processed))
+names(met_2023_2026_processed) <- tolower(names(met_2023_2026_processed))
 
 raw_processed_names <- tfe_met_variables.names %>%
-  filter(abbreviation_raw %in% names(met_2023_2024_processed))
+  filter(abbreviation_raw %in% names(met_2023_2026_processed))
 
-named_met_2023_2024_processed <- data.table::setnames(met_2023_2024_processed, 
+named_met_2023_2026_processed <- data.table::setnames(met_2023_2026_processed, 
                                                       old = raw_processed_names$abbreviation_raw, 
                                                       new = raw_processed_names$abbreviation_processed)
 
-vpd_named_met_2023_2024_processed <- named_met_2023_2024_processed %>%
+vpd_named_met_2023_2026_processed <- named_met_2023_2026_processed %>%
   mutate(rh_belowRoof_perc = ifelse(rh_belowRoof_perc > 1, 1, rh_belowRoof_perc),
          rh_aboveRoof_perc = ifelse(rh_aboveRoof_perc > 1, 1, rh_aboveRoof_perc),
          rh42m_perc = ifelse(rh42m_perc > 1, 1, rh42m_perc),
@@ -165,34 +183,34 @@ vpd_named_met_2023_2024_processed <- named_met_2023_2024_processed %>%
          vpd42m_kPa = bigleaf::rH.to.VPD(rh42m_perc/100, t42m_mean_C)) %>%
   select(-battv_min, ptemp_c_avg)
 
-names(vpd_named_met_2023_2024_processed)
+names(vpd_named_met_2023_2026_processed)
 
 
 ### GAP FILL ####
 
-varsToGapfill <- names(vpd_named_met_2023_2024_processed)[!names(vpd_named_met_2023_2024_processed) %in% c("timestamp", "date", "yday", "precip_mm")]
+varsToGapfill <- names(vpd_named_met_2023_2026_processed)[!names(vpd_named_met_2023_2026_processed) %in% c("timestamp", "date", "yday", "precip_mm")]
 
-vpd_named_met_2023_2024_processed$ID <- "TFE"
+vpd_named_met_2023_2026_processed$ID <- "TFE"
 
 for(var in varsToGapfill){
-  vpd_named_met_2023_2024_processed <- gapFillTimeSeries(data = vpd_named_met_2023_2024_processed, 
+  vpd_named_met_2023_2026_processed <- gapFillTimeSeries(data = vpd_named_met_2023_2026_processed, 
                                                             variable = var)
 }
 
-vpd_named_met_2023_2024_processed$ID <- NULL
+vpd_named_met_2023_2026_processed$ID <- NULL
 
-summary(vpd_named_met_2023_2024_processed)
+summary(vpd_named_met_2023_2026_processed)
 
 
 #### SAVE ---------------------------------------------------------------------- ####
 
-write_csv(vpd_named_met_2023_2024_processed, paste0(processed_folder_out,
-                                          min(as_date(vpd_named_met_2023_2024_processed$date), na.rm = T), "-", 
-                                          max(as_date(vpd_named_met_2023_2024_processed$date), na.rm = T),
+write_csv(vpd_named_met_2023_2026_processed, paste0(processed_folder_out,
+                                          min(as_date(vpd_named_met_2023_2026_processed$date), na.rm = T), "-", 
+                                          max(as_date(vpd_named_met_2023_2026_processed$date), na.rm = T),
                                           "_met_tfe_processed.csv"))
 
 # to general
-write_csv(vpd_named_met_2023_2024_processed, paste0(root.dir, "data_processed/met/",
-                                                    min(as_date(vpd_named_met_2023_2024_processed$date), na.rm = T), "-", 
-                                                    max(as_date(vpd_named_met_2023_2024_processed$date), na.rm = T),
+write_csv(vpd_named_met_2023_2026_processed, paste0(root.dir, "data_processed/met/",
+                                                    min(as_date(vpd_named_met_2023_2026_processed$date), na.rm = T), "-", 
+                                                    max(as_date(vpd_named_met_2023_2026_processed$date), na.rm = T),
                                                     "_met_tfe_processed.csv"))
